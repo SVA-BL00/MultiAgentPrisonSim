@@ -3,17 +3,7 @@ guid: e78fd3d3e8b5f534dbc70c279bfe7aca
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: coin_knight_faceMt.001
-    second: {fileID: 2100000, guid: 6404d2c3e522c654f9ce62fcb1aa5953, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: mii_bodyMt
-    second: {fileID: 2100000, guid: 996fed611d31ea445ae52e7bfa06c02a, type: 2}
+  externalObjects: {}
   materials:
     materialImportMode: 2
     materialName: 0
