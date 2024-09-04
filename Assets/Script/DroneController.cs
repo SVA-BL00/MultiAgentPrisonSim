@@ -8,6 +8,7 @@ public class DroneController : MonoBehaviour
     //public Request Request;
     Rigidbody DR;
     public float fixedDistance = 10f;
+    public float actionDuration = 0.1f;
     private Quaternion targetRotation;
     public string whatTouched;
     private float waitSecond;
@@ -31,6 +32,8 @@ public class DroneController : MonoBehaviour
     // }
 
     void ActionHandler(){
+        //StartCoroutine(Move());
+        //StartCoroutine(Turn());
         //Request.SendDataToServer(toPython, HandleServerResponse);
     }
 
@@ -65,14 +68,34 @@ public class DroneController : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
     }
-    void Turn(){
-        float currentYRotation = transform.eulerAngles.y;
+    IEnumerator Turn(){
+        float elapsedTime = 0f;
+
+        Quaternion qcurrentYRotation = transform.rotation;
+        float currentYRotation = transform.eulerAngles.y; // Needed to obtain target, same as qcurrent
+
         Quaternion targetRotation = Quaternion.Euler(0, currentYRotation + 90f, 0);
 
-        transform.rotation = targetRotation;
-        //botRigid.rotation = targetRotation;
+        while (elapsedTime < actionDuration){
+            transform.rotation = Quaternion.Slerp(qcurrentYRotation, targetRotation, elapsedTime / actionDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
 
-        // ClampRotation();
-        // ClampPosition();
+        transform.rotation = targetRotation;
+    }
+
+    IEnumerator Move(){
+        float elapsedTime = 0f;
+        Vector3 startingPos = transform.position;
+        Vector3 targetPos = startingPos - transform.forward * 10f;
+
+        while (elapsedTime < actionDuration){
+            DR.MovePosition(Vector3.Lerp(startingPos, targetPos, elapsedTime / actionDuration));
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        DR.MovePosition(targetPos);
     }
 }
