@@ -6,7 +6,7 @@ AnimationClip:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: male_hand_model_skeleton_mii_main_wait
+  m_Name: IDLE
   serializedVersion: 7
   m_Legacy: 0
   m_Compressed: 0
