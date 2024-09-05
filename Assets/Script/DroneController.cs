@@ -5,97 +5,93 @@ using UnityEngine;
 
 public class DroneController : MonoBehaviour
 {
-    //public Request Request;
     Rigidbody DR;
+    public List<GameObject> cameras;
     public float fixedDistance = 10f;
     public float actionDuration = 0.1f;
+    public float moveSpeed = 5f;
+    public float rotationSpeed = 90f;
     private Quaternion targetRotation;
+    private Vector3 targetPosition;
     public string whatTouched;
-    private float waitSecond;
-    //public JSONpy toPython;
+    private string currentAction = null;
+    public bool isPrisonerInView;
 
     void Awake(){
         DR = GetComponent<Rigidbody>();
-        // if (Request == null)
-        // {
-        //     Request = FindObjectOfType<Request>();
-        // }
     }
+
     void Start(){
         StartCoroutine(ActionCheck());
     }
-    // void Move(){
-    //     if(velocity != tempVelocity){
-    //         velocity = tempVelocity;
-    //     }
-    //     botRigid.MovePosition(botRigid.position + transform.forward);
-    // }
 
-    void ActionHandler(){
-        //StartCoroutine(Move());
-        //StartCoroutine(Turn());
-        //Request.SendDataToServer(toPython, HandleServerResponse);
-    }
-
-    void HandleServerResponse(string response){
-        if(string.IsNullOrEmpty(response)){
-            Debug.LogError("Failed to receive a valid response from the server.");
-            return;
+    void Update(){
+        if(currentAction != null){
+            if(currentAction == "move"){
+                transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+                if (transform.position == targetPosition){
+                    currentAction = null;
+                }
+            }else if(currentAction.StartsWith("turn")){
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                if(transform.rotation == targetRotation){
+                    currentAction = null;
+                }
+            }
         }
-        // switch(response){
-        //     case "move":
-        //         Move();
-        //         break;
-        //     case "grab":
-        //     case "drop":
-        //     case "turn":
-        //         // velocity = 0;
-        //         // ClampPosition();
-        //         if(response == "turn"){
-        //             Turn();
-        //         }else if(response == "grab"){
-        //             Grab();
-        //         }else if(response == "drop"){
-        //             Drop();
-        //         }
-        //         break;
-        // }
-        
     }
+
+    public void ActionHandler(string command){
+        currentAction = command;
+
+        switch(command){
+            case "move":
+                Vector3 newPosition = DR.transform.position + Vector3.forward * 10f;
+                targetPosition = newPosition;
+                break;
+
+            case "turnN":
+                Quaternion turnNorth = Quaternion.Euler(0, 0, 0);
+                targetRotation = turnNorth;
+                break;
+
+            case "turnS":
+                Quaternion turnSouth = Quaternion.Euler(0, 180, 0);
+                targetRotation = turnSouth;
+                break;
+
+            case "turnE":
+                Quaternion turnEast = Quaternion.Euler(0, 90, 0);
+                targetRotation = turnEast;
+                break;
+
+            case "turnW":
+                Quaternion turnWest = Quaternion.Euler(0, 270, 0);
+                targetRotation = turnWest;
+                break;
+
+            default:
+                Debug.Log("Unknown command received: " + command);
+                break;
+        }
+    }
+
+    void SendEnvironment(){
+        // TODO: BOOL VISION COMPUTACIONAL
+        Vector3 position = DR.transform.position;
+        string environmentData = $"{{\"position\": \"{DR.transform.position}\", " +
+                                 $"\"cv\": \"{isPrisonerInView}\", " +
+                                 $"\"Camera1\": \"{cameras[0].GetComponent<CameraDetector>().isDetected}\", " +
+                                 $"\"Camera2\": \"{cameras[1].GetComponent<CameraDetector>().isDetected}\", " +
+                                 $"\"Camera3\": \"{cameras[2].GetComponent<CameraDetector>().isDetected}\", " +
+                                 $"\"Camera4\": \"{cameras[3].GetComponent<CameraDetector>().isDetected}\"}}";
+        FindObjectOfType<Client>().socket.Emit("drone_handler", environmentData);
+    }
+
     IEnumerator ActionCheck(){
-        while(true){
-            ActionHandler();
-            yield return new WaitForSeconds(0.1f);
+        while (true){
+            SendEnvironment();
+            yield return new WaitForSeconds(0.3f);
         }
-    }
-    IEnumerator Turn(){
-        float elapsedTime = 0f;
-
-        Quaternion qcurrentYRotation = transform.rotation;
-        float currentYRotation = transform.eulerAngles.y; // Needed to obtain target, same as qcurrent
-
-        Quaternion targetRotation = Quaternion.Euler(0, currentYRotation + 90f, 0);
-
-        while (elapsedTime < actionDuration){
-            transform.rotation = Quaternion.Slerp(qcurrentYRotation, targetRotation, elapsedTime / actionDuration);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        transform.rotation = targetRotation;
-    }
-
-    IEnumerator Move(){
-        float elapsedTime = 0f;
-        Vector3 startingPos = transform.position;
-        Vector3 targetPos = startingPos - transform.forward * 10f;
-
-        while (elapsedTime < actionDuration){
-            DR.MovePosition(Vector3.Lerp(startingPos, targetPos, elapsedTime / actionDuration));
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        DR.MovePosition(targetPos);
     }
 }
