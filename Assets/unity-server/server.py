@@ -4,14 +4,14 @@ import logging
 import cv2
 import numpy as np
 from threading import Thread, Event as ThreadEvent
-
 from time import sleep
-
-model = YOLO('yolov8s.pt')
-#fps part
-import time
-
 from concurrent.futures import ThreadPoolExecutor
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+model = YOLO('yolov8s.pt', verbose= False)
 
 # Create a pool of threads (adjust the number of workers as needed)
 executor = ThreadPoolExecutor(max_workers=5)
@@ -37,51 +37,92 @@ def get_numeric_data(buffer):
     return numeric_buffer, left_bytes
 
 def handle_socket_client(client_socket, addr, port):
-    logger = logging.getLogger("handle_socket_client")
-    logger.info(f"connected to client: {addr} on port {port}")
+    logger.info(f"Connected to client: {addr} on port {port}")
 
     while True:
-        data = client_socket.recv(7)
-        if not data:
-            break
+        try:
+            # First, check if we are handling status or image data
+            # You could use a flag or a specific protocol to decide whether it's status or image data.
+            # For simplicity, assume that if the client sends 7 bytes, it's an image; otherwise, it's status.
 
-        numeric_data, initial_buffer = get_numeric_data(data)
-        data_len = int(numeric_data.decode('ascii'))
-        logger.info("data_len: {}".format(data_len))
+            # Try to receive the 7-byte length header
+            data = client_socket.recv(7)
 
-        buffer = initial_buffer
-        bytes_left = data_len - len(buffer)
-
-        while bytes_left > 0:
-            fragment = client_socket.recv(bytes_left)
-            if not fragment:
+            # Check if the received data is less than 7 bytes (likely to be the detection status)
+            if len(data) < 7:
+                # Assume this is the detection status being sent (a single byte)
+                if data:
+                    status = data[0]
+                    logger.info(f"Received detection status: {status}")
+                    # Process the detection status here, e.g., log or notify
                 break
-            buffer += fragment
+
+            if not data:
+                break
+
+            # If 7 bytes received, assume it's image data
+            numeric_data, initial_buffer = get_numeric_data(data)
+            data_len = int(numeric_data.decode('ascii'))  # Expected length of image data
+
+            buffer = initial_buffer
             bytes_left = data_len - len(buffer)
 
-        if len(buffer) != data_len:
-            logger.error("received data length does not match the expected length")
-            break
-        
-        # Convert buffer to image
-        nparr = np.frombuffer(buffer, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            # Log expected and actual received lengths for debugging
+            logger.info(f"Expected data length: {data_len}, Initial buffer length: {len(initial_buffer)}")
 
-        # Submit the YOLO processing task to the thread pool
-        future = executor.submit(process_image_with_yolo, img, port)
+            while bytes_left > 0:
+                fragment = client_socket.recv(bytes_left)
+                if not fragment:
+                    logger.error("Incomplete data fragment received")
+                    break
+                buffer += fragment
+                bytes_left = data_len - len(buffer)
+
+            # Ensure the buffer size matches the expected data length
+            if len(buffer) != data_len:
+                logger.error(f"Received data length {len(buffer)} does not match the expected length {data_len}")
+                break
+
+            # Process the image
+            nparr = np.frombuffer(buffer, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            # Submit the YOLO processing task
+            executor.submit(process_image_with_yolo, img, port)
+
+        except Exception as e:
+            logger.error(f"Error while processing data from client: {e}")
+            break
 
     client_socket.close()
     cv2.destroyAllWindows()
-    logger.info("client disconnected")
+    logger.info("Client disconnected")
+
+
+    client_socket.close()
+    cv2.destroyAllWindows()
+    logger.info("Client disconnected")
+
 
 def process_image_with_yolo(img, port):
     """Function to handle YOLO inference and image processing"""
-    results = model.track(img, persist=True)
-    
-    # Check if any bunnies were detected
-    bunnies = [r for r in results[0].boxes.cls if model.names[int(r)] == 'bunny']
+    from contextlib import redirect_stdout
+    import io
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        results = model.track(img, persist=True, verbose=False)
+
+    # Check if any objects were detected
+    detections = results[0].boxes
+    if len(detections) == 0:
+        send_detection_status(port, False)
+        return  # No detections, exit silently
+    # Filter for bunnies
+    bunnies = [r for r in detections if model.names[int(r.cls)] == 'bunny']
     
     if bunnies:
+        send_detection_status(port, True)
         # Get the number of bunnies detected
         num_bunnies = len(bunnies)
         
@@ -90,21 +131,38 @@ def process_image_with_yolo(img, port):
         inference_time = results[0].speed['inference']
         postprocess_time = results[0].speed['postprocess']
         
-        # Print the information
+        # Print the information (only for bunny detections)
         print(f"Port {port}: {img.shape[1]}x{img.shape[0]} {num_bunnies} bunny, {inference_time:.1f}ms")
         print(f"Speed: {preprocess_time:.1f}ms preprocess, {inference_time:.1f}ms inference, {postprocess_time:.1f}ms postprocess per image at shape {img.shape}")
-    
-    annotated_frame = results[0].plot()
 
-    # Display results
-    cv2.imshow('YOLOv8 Tracking', annotated_frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        return
 exit_socket_server_flag = ThreadEvent()
 
-def socket_server(port):
-    logger = logging.getLogger(f"socket_server_{port}")
+def send_detection_status(port, status):
+    """Send detection status (True/False) back to the Unity client"""
+    try:
+        # Open a connection to send the status
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('127.0.0.1', port))
+        
+        # Send the actual byte (not the ASCII representation of '1' or '0')
+        status_byte = bytes([1]) if status else bytes([0])
 
+        # Log the status being sent for debugging
+        logger.info(f"Sending detection status: {status_byte[0]} to port {port}")
+
+        # Send the status byte
+        client_socket.sendall(status_byte)
+
+        # Ensure the socket stays open long enough for transmission
+        client_socket.shutdown(socket.SHUT_WR)
+        client_socket.close()
+    except Exception as e:
+        logger.error(f"Failed to send detection status to Unity: {e}")
+
+
+
+
+def socket_server(port):
     HOST = '127.0.0.1'
     PORT = port  # Dynamically pass the port
 
@@ -135,7 +193,7 @@ for port in port_list:
 
 # Wait for 'q' to stop
 while True:
-    if input("press 'q' to exit\n") == 'q':
+    if input("Press 'q' to exit\n") == 'q':
         exit_socket_server_flag.set()
         break
 
