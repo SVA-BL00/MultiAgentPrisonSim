@@ -16,7 +16,7 @@ public class CameraStreamer : MonoBehaviour
     public string serverIP = "127.0.0.1";
 
     [Header("Configuraciones")] [Tooltip("Puerto del servidor de python")]
-    public int serverPort = 5000;
+    [SerializeField] public int serverPort = 5000;
 
     // textura donde se va a renderizar la camara
     private RenderTexture renderTexture;
@@ -30,6 +30,8 @@ public class CameraStreamer : MonoBehaviour
     // flujo de datos de la conexion
     private NetworkStream stream;
 
+    private float frameInterval = 0.1f; // 100 ms
+    private float timeSinceLastFrame = 0;
     void Start()
     {
         // asegurarnos que la camara de python este deshabilitada
@@ -64,7 +66,12 @@ public class CameraStreamer : MonoBehaviour
         // si la conexion con el servidor esta establecida, capturar y enviar frame
         if (client.Connected)
         {
-            StartCoroutine(CaptureAndSendFrame());
+            timeSinceLastFrame += Time.deltaTime;
+            if (timeSinceLastFrame >= frameInterval)
+            {
+                timeSinceLastFrame = 0;
+                StartCoroutine(CaptureAndSendFrame());
+            }
         }
     }
 
