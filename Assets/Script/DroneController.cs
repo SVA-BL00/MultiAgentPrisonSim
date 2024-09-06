@@ -7,9 +7,9 @@ public class DroneController : MonoBehaviour
 {
     Rigidbody DR;
     public List<GameObject> cameras;
-    public float fixedDistance = 10f;
+    public float fixedDistance = 0.0001f;
     public float actionDuration = 0.1f;
-    public float moveSpeed = 5f;
+    public float moveSpeed = 0.1f;
     public float rotationSpeed = 90f;
     private Quaternion targetRotation;
     private Vector3 targetPosition;
@@ -41,7 +41,7 @@ public class DroneController : MonoBehaviour
             }
             else if (currentAction.StartsWith("turn"))
             {
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                transform.rotation = targetRotation;
                 if (transform.rotation == targetRotation)
                 {
                     currentAction = null;
@@ -57,7 +57,7 @@ public class DroneController : MonoBehaviour
         switch (command)
         {
             case "move":
-                Vector3 newPosition = DR.transform.position + Vector3.forward * 10f;
+                Vector3 newPosition = DR.transform.position - transform.forward * 10f;
                 targetPosition = newPosition;
                 break;
 
