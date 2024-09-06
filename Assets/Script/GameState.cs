@@ -6,8 +6,8 @@ public class GameState : MonoBehaviour
 {
     public Client clientScript;
     public List<GameObject> watchTowers;
-    public float minInterval = 5f;
-    public float maxInterval = 10f;
+    public float minInterval = 10f;
+    public float maxInterval = 15f;
     public bool spawnedPrisoner = false;
 
     void Start(){
