@@ -87,6 +87,14 @@ public class DroneController : MonoBehaviour
                 targetPosition = transform.position;
                 targetRotation = transform.rotation;
                 break;
+                
+            case "lower":
+                targetPosition = new Vector3(
+                    DR.transform.position.x, 
+                    DR.transform.position.y - 0.5f, 
+                    DR.transform.position.z
+                );
+                break;
 
             default:
                 Debug.Log("Unknown command received: " + command);
