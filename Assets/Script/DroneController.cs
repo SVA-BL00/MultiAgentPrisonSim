@@ -51,22 +51,22 @@ public class DroneController : MonoBehaviour
                 break;
 
             case "turnN":
-                Quaternion turnNorth = Quaternion.Euler(0, 0, 0);
+                Quaternion turnNorth = Quaternion.Euler(0, 180, 0);
                 targetRotation = turnNorth;
                 break;
 
             case "turnS":
-                Quaternion turnSouth = Quaternion.Euler(0, 180, 0);
+                Quaternion turnSouth = Quaternion.Euler(0, -90, 0);
                 targetRotation = turnSouth;
                 break;
 
             case "turnE":
-                Quaternion turnEast = Quaternion.Euler(0, 90, 0);
+                Quaternion turnEast = Quaternion.Euler(0, 270, 0);
                 targetRotation = turnEast;
                 break;
 
             case "turnW":
-                Quaternion turnWest = Quaternion.Euler(0, 270, 0);
+                Quaternion turnWest = Quaternion.Euler(0, 90, 0);
                 targetRotation = turnWest;
                 break;
 
