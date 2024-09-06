@@ -57,7 +57,7 @@ public class DroneController : MonoBehaviour
         switch (command)
         {
             case "move":
-                Vector3 newPosition = DR.transform.position + Vector3.forward * 10f;
+                Vector3 newPosition = DR.transform.position - Vector3.forward * 10f;
                 targetPosition = newPosition;
                 break;
 
