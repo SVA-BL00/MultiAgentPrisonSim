@@ -12,7 +12,7 @@ public class Client : MonoBehaviour
 {
     public SocketIOUnity socket;
     public DroneController droneController;
-    
+
     private bool isGameSessionActive = false;
     private float reconnectDelay = 5f;
     private int maxReconnectAttempts = 5;
@@ -20,11 +20,13 @@ public class Client : MonoBehaviour
     private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
 
-    void Awake(){
+    void Awake()
+    {
         InitializeSocket();
     }
 
-    private void InitializeSocket(){
+    private void InitializeSocket()
+    {
         var uri = new Uri("http://localhost:5000");
         socket = new SocketIOUnity(uri, new SocketIOOptions
         {
@@ -38,20 +40,24 @@ public class Client : MonoBehaviour
         socket.JsonSerializer = new NewtonsoftJsonSerializer();
 
         // Set up event handlers
-        socket.OnConnected += (sender, e) => {
+        socket.OnConnected += (sender, e) =>
+        {
             Debug.Log("Connected to server");
             currentReconnectAttempts = 0; // Reset reconnect attempts on successful connection
         };
 
-        socket.OnDisconnected += (sender, e) => {
+        socket.OnDisconnected += (sender, e) =>
+        {
             Debug.Log("Disconnected from server: " + e);
-            if (isGameSessionActive){
+            if (isGameSessionActive)
+            {
                 StartCoroutine(TryReconnect());
             }
         };
 
         // AGENT ACTION CALL //
-        socket.OnUnityThread("drone_response", (response) => {
+        socket.OnUnityThread("drone_response", (response) =>
+        {
             string rawResponse = response.ToString();
             //Debug.Log("Raw DRONE server response: " + rawResponse);
             HandleDroneResponse(response);
@@ -60,85 +66,113 @@ public class Client : MonoBehaviour
 
     public async Task StartGameSession()
     {
-        if(!isGameSessionActive){
+        if (!isGameSessionActive)
+        {
             isGameSessionActive = true;
             await ConnectAsync(cancellationTokenSource.Token);
             Debug.Log("Game session started");
-        }else{
+        }
+        else
+        {
             Debug.Log("Game session is already active");
         }
     }
 
     public async Task EndGameSession()
     {
-        if(isGameSessionActive){
+        if (isGameSessionActive)
+        {
             isGameSessionActive = false;
             await DisconnectAsync(cancellationTokenSource.Token);
             Debug.Log("Game session ended");
-        }else{
+        }
+        else
+        {
             Debug.Log("No active game session to end");
         }
     }
 
-    public async Task ConnectAsync(CancellationToken token){
-        try{
+    public async Task ConnectAsync(CancellationToken token)
+    {
+        try
+        {
             Debug.Log("Connecting to server asynchronously...");
             await socket.ConnectAsync();
-        }catch (Exception ex){
+        }
+        catch (Exception ex)
+        {
             Debug.LogError($"Error connecting to server asynchronously: {ex.Message}");
         }
     }
 
-    public async Task DisconnectAsync(CancellationToken token){
-        try{
+    public async Task DisconnectAsync(CancellationToken token)
+    {
+        try
+        {
             Debug.Log("Disconnecting from server asynchronously...");
             await socket.DisconnectAsync();
-        }catch (Exception ex){
+        }
+        catch (Exception ex)
+        {
             Debug.LogError($"Error disconnecting from server asynchronously: {ex.Message}");
         }
     }
 
-    private IEnumerator TryReconnect(){
-        while(isGameSessionActive && currentReconnectAttempts < maxReconnectAttempts && !cancellationTokenSource.Token.IsCancellationRequested){
+    private IEnumerator TryReconnect()
+    {
+        while (isGameSessionActive && currentReconnectAttempts < maxReconnectAttempts && !cancellationTokenSource.Token.IsCancellationRequested)
+        {
             Debug.Log($"Attempting to reconnect... (Attempt {currentReconnectAttempts + 1}/{maxReconnectAttempts})");
             yield return new WaitForSeconds(reconnectDelay);
 
             var connectTask = ConnectAsync(cancellationTokenSource.Token);
             yield return new WaitUntil(() => connectTask.IsCompleted);
 
-            if(socket.Connected){
+            if (socket.Connected)
+            {
                 Debug.Log("Reconnected successfully");
                 yield break;
-            }else{
+            }
+            else
+            {
                 Debug.LogError("Reconnection attempt failed");
             }
 
             currentReconnectAttempts++;
         }
 
-        if(currentReconnectAttempts >= maxReconnectAttempts){
+        if (currentReconnectAttempts >= maxReconnectAttempts)
+        {
             Debug.LogError("Max reconnection attempts reached. Please check your connection and try again later.");
             isGameSessionActive = false;
         }
     }
 
-    private void HandleDroneResponse(SocketIOResponse response){
-        try{
+    private void HandleDroneResponse(SocketIOResponse response)
+    {
+        try
+        {
             var data = response.GetValue<JObject>();
-            
-            if(data != null && data.ContainsKey("command")){
+
+            if (data != null && data.ContainsKey("command"))
+            {
                 string command = data["command"].ToString();
                 //Debug.Log("Received command: " + command);
                 droneController.ActionHandler(command);
-            }else{
+            }
+            else
+            {
                 Debug.LogWarning("Received invalid or empty response from server");
             }
-        }catch (Exception ex){
+        }
+        catch (Exception ex)
+        {
             Debug.LogError("Error parsing drone response: " + ex.Message);
         }
     }
 
-    private void OnDestroy(){
+    private void OnDestroy()
+    {
         cancellationTokenSource.Cancel();
         EndGameSession();
     }
