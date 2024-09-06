@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class CameraDetector : MonoBehaviour
 {
+    public receiver receiver;
     public bool isDetected = false;
     void Start()
     {
@@ -13,6 +14,9 @@ public class CameraDetector : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (receiver != null && receiver.bunnyDetected)
+    {
+        isDetected = true;
+    }
     }
 }

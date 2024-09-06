@@ -1,8 +1,10 @@
 using UnityEngine;
-using System.Collections;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
+using System.IO;
 using System.Threading;
+using System;
 
 public class CameraStreamer : MonoBehaviour
 {
@@ -12,61 +14,89 @@ public class CameraStreamer : MonoBehaviour
 
     [Header("Server Configuration")]
     public string serverIP = "127.0.0.1";
-    [SerializeField] public int serverPort = 5000; // Changed to match one of the server ports
+    [SerializeField] public int serverPort = 5000;
 
     private RenderTexture renderTexture;
     private Texture2D texture2D;
     private TcpClient client;
     private NetworkStream stream;
-    private float frameInterval = 0.1f;
+    private float frameInterval = 0.5f; // Increased interval to reduce load
     private float timeSinceLastFrame = 0;
     private bool isConnected = false;
 
-    private CameraDetector cameraDetector;
+    [SerializeField] public GameObject Camera;
+    CameraDetector cameraDetector;
 
     private void Awake()
     {
-        cameraDetector = GetComponent<CameraDetector>();
+        Debug.Log("CameraStreamer: Awake method called");
+        try
+        {
+            cameraDetector = Camera.GetComponent<CameraDetector>();
+            Debug.Log("CameraStreamer: CameraDetector component found");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"CameraStreamer: Error in Awake: {e.Message}");
+        }
     }
 
-    private void Start()
+    private async void Start()
     {
+        Debug.Log("CameraStreamer: Start method called");
         if (feedCamera.enabled)
         {
-            Debug.LogError("The 'feedCamera' must be disabled");
+            Debug.LogError("CameraStreamer: The 'feedCamera' must be disabled");
         }
 
         InitializeConnection();
         InitializeTextures();
+        Debug.Log("CameraStreamer: Start method completed");
     }
 
     private void InitializeConnection()
     {
+        Debug.Log("CameraStreamer: Initializing connection");
         try
         {
             client = new TcpClient(serverIP, serverPort);
             stream = client.GetStream();
             isConnected = true;
-            Debug.Log($"Connected to server on port {serverPort}");
+            Debug.Log($"CameraStreamer: Connected to server on port {serverPort}");
         }
         catch (SocketException e)
         {
-            Debug.LogError($"Failed to connect to server: {e.Message}");
+            Debug.LogError($"CameraStreamer: Failed to connect to server: {e.Message}");
+            isConnected = false;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"CameraStreamer: Unexpected error in InitializeConnection: {e.Message}");
             isConnected = false;
         }
     }
 
     private void InitializeTextures()
     {
-        renderTexture = new RenderTexture(entityCamera.pixelWidth, entityCamera.pixelHeight, 24);
-        feedCamera.targetTexture = renderTexture;
-        texture2D = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
+        Debug.Log("CameraStreamer: Initializing textures");
+        try
+        {
+            renderTexture = new RenderTexture(entityCamera.pixelWidth / 2, entityCamera.pixelHeight / 2, 24);
+            feedCamera.targetTexture = renderTexture;
+            texture2D = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
+            Debug.Log("CameraStreamer: Textures initialized successfully");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"CameraStreamer: Error initializing textures: {e.Message}");
+        }
     }
 
     private void Update()
     {
         if (!isConnected)
         {
+            Debug.Log("CameraStreamer: Not connected, attempting reconnection");
             AttemptReconnection();
             return;
         }
@@ -77,87 +107,74 @@ public class CameraStreamer : MonoBehaviour
         timeSinceLastFrame += Time.deltaTime;
         if (timeSinceLastFrame >= frameInterval)
         {
+            Debug.Log("CameraStreamer: Frame interval reached, capturing and sending frame");
             timeSinceLastFrame = 0;
-            StartCoroutine(CaptureAndSendFrame());
+            _ = CaptureAndSendFrameAsync();  // Fire and forget
         }
     }
 
     private void AttemptReconnection()
     {
-        Debug.Log("Attempting to reconnect...");
+        Debug.Log("CameraStreamer: Attempting to reconnect...");
         InitializeConnection();
     }
 
-    private IEnumerator CaptureAndSendFrame()
-{
-    yield return new WaitForEndOfFrame();
-
-    // Render the feed camera and capture the frame
-    feedCamera.Render();
-    texture2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-    texture2D.Apply();
-
-    // Convert the texture to a JPG byte array
-    byte[] bytes = texture2D.EncodeToJPG();
-
-    try
+    private async Task CaptureAndSendFrameAsync()
     {
-        // Send the length of the frame (7 bytes as a string) - Image only
-        byte[] lengthBytes = Encoding.UTF8.GetBytes(bytes.Length.ToString().PadLeft(7, '0'));
-        stream.Write(lengthBytes, 0, lengthBytes.Length);
-
-        // Log the frame size for debugging
-        Debug.Log($"Sending frame of size: {bytes.Length}");
-
-        // Send the actual frame data (Image data)
-        stream.Write(bytes, 0, bytes.Length);
-
-        // After sending the frame, we expect to receive detection status
-        ReceiveDetectionStatus();
-    }
-    catch (SocketException e)
-    {
-        Debug.LogError($"Connection lost: {e.Message}");
-        isConnected = false;
-    }
-}
-
-
-private void ReceiveDetectionStatus()
-{
-    try
-    {
-        // Buffer to receive 1 byte (status byte)
-        byte[] buffer = new byte[1];  // Expecting 1 byte for the status
-        int bytesRead = stream.Read(buffer, 0, buffer.Length);
-
-        if (bytesRead > 0)
+        Debug.Log("CameraStreamer: Starting CaptureAndSendFrameAsync");
+        try
         {
-            // Log the received byte for debugging
-            Debug.Log($"Received status byte: {buffer[0]}");
+            byte[] buffer = new byte[1];
+            int bytesRead = 0;
 
-            // Check if the buffer contains '1' (bunny detected) or '0' (no bunny detected)
-            bool bunnyDetected = buffer[0] == 1;
-            cameraDetector.isDetected = bunnyDetected;  // Update detection status in Unity
-            Debug.Log($"Bunny detected: {bunnyDetected}");
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2))) // 2-second timeout
+            {
+                Debug.Log("CameraStreamer: Waiting for server response...");
+                try
+                {
+                    bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
+                    Debug.Log($"CameraStreamer: Read operation completed. Bytes read: {bytesRead}");
+                }
+                catch (OperationCanceledException)
+                {
+                    Debug.LogWarning("CameraStreamer: Read operation timed out after 2 seconds");
+                    return;
+                }
+            }
+
+            if (bytesRead > 0)
+            {
+                Debug.Log($"CameraStreamer: Received byte value: {buffer[0]}");
+                bool bunnyDetected = buffer[0] == 1;
+                if (cameraDetector != null)
+                {
+                    cameraDetector.isDetected = bunnyDetected;
+                    Debug.Log($"CameraStreamer: Bunny detected: {bunnyDetected}");
+                }
+                else
+                {
+                    Debug.LogError("CameraStreamer: cameraDetector is null");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("CameraStreamer: No data was read from the stream.");
+            }
         }
-        else
+        catch (Exception e)
         {
-            Debug.LogWarning("No detection status received");
+            Debug.LogError($"CameraStreamer: Error in ReceiveDetectionStatusAsync: {e.Message}");
+            isConnected = false;
+        }
+        finally
+        {
+            Debug.Log("CameraStreamer: ReceiveDetectionStatusAsync completed");
         }
     }
-    catch (SocketException e)
-    {
-        Debug.LogError($"Error receiving detection status: {e.Message}");
-        isConnected = false;
-    }
-}
-
-
-
 
     private void OnApplicationQuit()
     {
+        Debug.Log("CameraStreamer: Application quitting, closing connection");
         if (client != null && client.Connected)
         {
             client.Close();
