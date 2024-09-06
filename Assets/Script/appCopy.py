@@ -11,14 +11,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize ontology
 onto = get_ontology("file://onto.owl")
-onto.load()
-onto.destroy()
-
-def create_resource_if_not_exists(resource_class, resource_name):
-    existing_resources = list(onto.search_one(iri=f"*{resource_name}"))
-    if existing_resources:
-        return existing_resources[0]
-    return resource_class(resource_name)
 
 #ONTOLOGIA
 #onto.delete()
@@ -107,17 +99,13 @@ class DroneAgent(ap.Agent):
         """
         Choose a new intention based on beliefs, desires, and intentions
         """
-        print("FILTER")
         if self.first_step:
             self.intention = self.desires['path1'][1]
             self.beliefs['current_path'] = 'path1'
 
         for rule in self.rules:
             act = rule()
-            print("ACT-")
-            print(act)
             if act is not None:
-                print("NOTNULL-")
                 act()
         
 
@@ -126,31 +114,25 @@ class DroneAgent(ap.Agent):
         Define a plan given an intention and a set of actions
         """
         self.plan = self.find_path()
-        print("FUNCTION Planning")
 
     def next(self):
         """
         Call the agent's reasoning and actions
         """
-        
         self.brf()
         self.opt()
         self.filter()
 
         if self.first_step:
-            print("FIRST-planning")
             self.planning()
             self.first_step = False
         elif self.beliefs['seeing_prisioner'].has_existence:
             self.alert()
         elif not self.plan:
-            print("NEXT-planning")
             self.planning()
         elif self.plan:
-            self.actionU = self.plan[0]
             eval(self.plan[0])
             self.plan.pop(0)
-        
 
     def setup(self):
         """
@@ -158,16 +140,16 @@ class DroneAgent(ap.Agent):
         """
         self.agentType = 0
         self.directionTag = 'N'
-        self.direction = (0,1)
+        self.direction = (-1, 0)
         self.per = []
         self.index = 0
 
         self.map = {}
         self.coordinates = {
-            'camera1': (0, 119),
-            'camera2': (122, 119),
-            'camera3': (122, 0),
-            'camera4': (0, 0)
+            'camera1': (-61, 48),
+            'camera2': (61, 48),
+            'camera3': (61, -71),
+            'camera4': (-61, -71)
         }
 
         for name, position in self.coordinates.items():
@@ -180,12 +162,11 @@ class DroneAgent(ap.Agent):
         self.actions = (self.find_path, self.next_position, self.switch_path, self.move, self.turn, self.idle)
         self.rules = (self.rule_1, self.rule_2, self.rule_3, self.rule_4)
         self.desires = {
-            'path1': [(50, 0), (0, 0), (0, 119), (122, 119), (122, 0)],
-            'path2': [(50, 0), (50, 40), (67, 40), (67, 0)]
+            'path1': [(4, 74), (-61, 48), (61, 48), (61, -71), (-61, -71)],
+            'path2': [(4, 74), (4, 1), (-12, 1.5), (-12, 74)]
         }
         self.intention = None
         self.plan = None
-        print("SETUP-------------")
         self.first_step = True
 
     def step(self, env):
@@ -208,18 +189,14 @@ class DroneAgent(ap.Agent):
         validator = [False, False, False, False]
         if self.beliefs['current_path'] == 'path1':
             validator[0] = True
-            print("VALIDATOR1")
         if self.per[0].has_place.has_position == str(self.intention):
             validator[1] = True
-            print("VALIDATOR2")
         if self.per[0].has_place.has_position != str(self.desires['path1'][-1]):
             validator[2] = True
-            print("VALIDATOR3")
         validator[3] = True
         for name, camera in self.beliefs['cameras'].items():
             if camera.has_alert == True:
                 validator[3] = False
-                print("VALIDATOR4")
 
         if sum(validator) == 4:
             return self.next_position
@@ -335,7 +312,6 @@ class DroneAgent(ap.Agent):
         return path
 
     def next_position(self):
-        print("NEXT-Position")
         print(self.index)
         self.index += 1
         self.intention = self.desires[self.beliefs['current_path']][self.index]
@@ -357,45 +333,45 @@ class DroneAgent(ap.Agent):
 
     def move(self):
         if self.directionTag == 'N':
-            self.model.grid.move_by(self, (0, 1))
-        if self.directionTag == 'S':
-            self.model.grid.move_by(self, (0, -1))
-        if self.directionTag == 'E':
-            self.model.grid.move_by(self, (1, 0))
-        if self.directionTag == 'W':
             self.model.grid.move_by(self, (-1, 0))
+        if self.directionTag == 'S':
+            self.model.grid.move_by(self, (1, 0))
+        if self.directionTag == 'E':
+            self.model.grid.move_by(self, (0, 1))
+        if self.directionTag == 'W':
+            self.model.grid.move_by(self, (0, -1))
         print(f"Moved to new position: {self.model.grid.positions[self]}")
         pass
 
     def turn(self, axis, distance):
         if axis == 'y' and distance < 0:
-            return 'self.turnS()'
-        elif axis == 'y' and distance > 0:
-            return 'self.turnN()'
-        elif axis == 'x' and distance < 0:
             return 'self.turnW()'
-        elif axis == 'x' and distance > 0:
+        elif axis == 'y' and distance > 0:
             return 'self.turnE()'
+        elif axis == 'x' and distance < 0:
+            return 'self.turnN()'
+        elif axis == 'x' and distance > 0:
+            return 'self.turnS()'
         else:
             return 'self.idle()'
 
     def turnN(self):
-        self.direction = (0,-1) #Hacia Norte
+        self.direction = (-1,0) #Hacia Norte
         self.directionTag = "N"
         pass
 
     def turnS(self):
-        self.direction = (0,1)  #Hacia Sur
+        self.direction = (1,0)  #Hacia Sur
         self.directionTag = "S"
         pass
 
     def turnE(self):
-        self.direction = (-1,0) #Hacia Este
+        self.direction = (0,1) #Hacia Este
         self.directionTag = "E"
         pass
 
     def turnW(self):
-        self.direction = (1,0) #Hacia Oeste
+        self.direction = (0,-1) #Hacia Oeste
         self.directionTag = "W"
         pass
 
@@ -413,67 +389,43 @@ class PrisonModel(ap.Model):
         self.drones.step(self.grid)
 
 
-
-# Global dictionary to store the model and index for each client
-client_states = {}
-
-def clean(string):
-    cleaned_string = string.replace("self.", "").replace("()", "")
-    return cleaned_string
-
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    client_id = request.sid
-    if client_id in client_states:
-        del client_states[client_id]
     print('Client disconnected')
+
+def clean_action(action_str):
+    # Remove "self." prefix and "()" suffix
+    if action_str.startswith('self.') and action_str.endswith('()'):
+        return action_str[5:-2]
+    return action_str
 
 @socketio.on('drone_handler')
 def handle_drone(message):
     try:
         data = json.loads(message)
-        client_id = request.sid
-        if client_id not in client_states:
-            parameters = {
-                'drones': 1,
-                'steps': 2000,
-                'M': 200,
-                'N': 200,
-                'dpos': [(50, 0)]
-            }
-            
-            model = PrisonModel(parameters)
-            result = model.setup()
-            
-            client_states[client_id] = {
-                'model': model,
-                'step_count': 0
-            }
         
-        client_state = client_states[client_id]
-        model = client_state['model']
-        step_count = client_state['step_count']
+        # Initialize model with the received parameters
+        parameters = {
+            'drones': 1,
+            'buildings': 0,
+            'M': 200,
+            'N': 200,
+            'dpos': [(4,74)]
+        }
         
-        if step_count < model.p.steps:
-            model.step()
-            client_state['step_count'] += 1
-        
-        if model.drones[0].actionU:
-            print(f"ACTUIONU")    
-            action = model.drones[0].actionU
+        model = PrisonModel(parameters)
+        model.run(steps=1)  # Ensure to run only one step at a time or as needed
+        if model.drones and model.drones[0].plan:
+            raw_action = model.drones[0].plan[0]
+            action = clean_action(raw_action)
         else:
-            action = "idle"
-        
-        print(f"Command: {action}")
-        
-        clean_action = clean(action)    
-        emit('drone_response', {'command': clean_action})
-        
-
+            action = 'idle'
+        print(action)
+        emit('drone_response', {'command': action})
     except json.JSONDecodeError:
         print('Received invalid JSON:', message)
     except Exception as e:
