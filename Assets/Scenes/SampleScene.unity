@@ -3753,6 +3753,26 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2045571499565978994, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
         type: 3}
+      propertyPath: m_BackGroundColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2045571499565978994, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2045571499565978994, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2045571499565978994, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2045571499565978994, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
       propertyPath: m_NormalizedViewPortRect.y
       value: 0.5
       objectReference: {fileID: 0}
@@ -3785,6 +3805,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Camera1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3106583651174235595, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
+      propertyPath: m_AllowXRRendering
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4020009030903431495, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
         type: 3}
