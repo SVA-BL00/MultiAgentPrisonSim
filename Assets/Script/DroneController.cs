@@ -17,56 +17,67 @@ public class DroneController : MonoBehaviour
     private string currentAction = null;
     public bool isPrisonerInView;
 
-    void Awake(){
+    void Awake()
+    {
         DR = GetComponent<Rigidbody>();
     }
 
-    void Start(){
+    void Start()
+    {
         StartCoroutine(ActionCheck());
     }
 
-    void Update(){
-        if(currentAction != null){
-            if(currentAction == "move"){
+    void Update()
+    {
+        if (currentAction != null)
+        {
+            if (currentAction == "move")
+            {
                 transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-                if (transform.position == targetPosition){
+                if (transform.position == targetPosition)
+                {
                     currentAction = null;
                 }
-            }else if(currentAction.StartsWith("turn")){
+            }
+            else if (currentAction.StartsWith("turn"))
+            {
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-                if(transform.rotation == targetRotation){
+                if (transform.rotation == targetRotation)
+                {
                     currentAction = null;
                 }
             }
         }
     }
 
-    public void ActionHandler(string command){
+    public void ActionHandler(string command)
+    {
         currentAction = command;
 
-        switch(command){
+        switch (command)
+        {
             case "move":
                 Vector3 newPosition = DR.transform.position + Vector3.forward * 10f;
                 targetPosition = newPosition;
                 break;
 
             case "turnN":
-                Quaternion turnNorth = Quaternion.Euler(0, 180, 0);
+                Quaternion turnNorth = Quaternion.Euler(0, 0, 0);
                 targetRotation = turnNorth;
                 break;
 
             case "turnS":
-                Quaternion turnSouth = Quaternion.Euler(0, -90, 0);
+                Quaternion turnSouth = Quaternion.Euler(0, 180, 0);
                 targetRotation = turnSouth;
                 break;
 
             case "turnE":
-                Quaternion turnEast = Quaternion.Euler(0, 270, 0);
+                Quaternion turnEast = Quaternion.Euler(0, 90, 0);
                 targetRotation = turnEast;
                 break;
 
             case "turnW":
-                Quaternion turnWest = Quaternion.Euler(0, 90, 0);
+                Quaternion turnWest = Quaternion.Euler(0, 270, 0);
                 targetRotation = turnWest;
                 break;
 
@@ -76,7 +87,8 @@ public class DroneController : MonoBehaviour
         }
     }
 
-    void SendEnvironment(){
+    void SendEnvironment()
+    {
         // TODO: BOOL VISION COMPUTACIONAL
         Vector3 position = DR.transform.position;
         string environmentData = $"{{\"position\": \"{DR.transform.position}\", " +
@@ -88,8 +100,10 @@ public class DroneController : MonoBehaviour
         FindObjectOfType<Client>().socket.Emit("drone_handler", environmentData);
     }
 
-    IEnumerator ActionCheck(){
-        while (true){
+    IEnumerator ActionCheck()
+    {
+        while (true)
+        {
             SendEnvironment();
             yield return new WaitForSeconds(0.3f);
         }
