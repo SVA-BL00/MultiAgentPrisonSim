@@ -97,6 +97,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e78fd3d3e8b5f534dbc70c279bfe7aca, type: 3}
+--- !u!1 &935713357180446656 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -6126929563872613600, guid: e78fd3d3e8b5f534dbc70c279bfe7aca,
+    type: 3}
+  m_PrefabInstance: {fileID: 2739477550032784608}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2417919718043282187 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: e78fd3d3e8b5f534dbc70c279bfe7aca,
@@ -114,7 +120,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 58.388454
+      value: 74.9274
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
         type: 3}
@@ -124,7 +130,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.313677
+      value: 7.8755226
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
         type: 3}
@@ -173,7 +179,19 @@ PrefabInstance:
         type: 3}
       insertIndex: 0
       addedObject: {fileID: 2417919718043282187}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1819037902775692074}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3199391045621993763}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8006645165322181024}
   m_SourcePrefab: {fileID: 100100000, guid: 8d7f058234d940c4ebc2cf413fa24fa2, type: 3}
 --- !u!4 &4877905717133875221 stripped
 Transform:
@@ -181,3 +199,68 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 6345474394666146983}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &6111048821413028342 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8d7f058234d940c4ebc2cf413fa24fa2,
+    type: 3}
+  m_PrefabInstance: {fileID: 6345474394666146983}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1819037902775692074
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6111048821413028342}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 2738ef2b77e9ec44ca05de413fa97a23, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!65 &3199391045621993763
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6111048821413028342}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 27.8, y: 12.3, z: 22.3}
+  m_Center: {x: 0, y: 7.7, z: 0}
+--- !u!114 &8006645165322181024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6111048821413028342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9664a3fc74781c49a141e3276667059, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BA: {fileID: 1819037902775692074}
+  FACE: {fileID: 935713357180446656}
+  materialIndex: 0
+  eyesSurprise: {x: 0.25, y: 0}
+  eyesClosed: {x: 0.75, y: 0}

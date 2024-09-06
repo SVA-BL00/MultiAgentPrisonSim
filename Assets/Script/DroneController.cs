@@ -80,6 +80,21 @@ public class DroneController : MonoBehaviour
                 Quaternion turnWest = Quaternion.Euler(0, 270, 0);
                 targetRotation = turnWest;
                 break;
+            
+            case "idle":
+                DR.velocity = Vector3.zero;
+                DR.angularVelocity = Vector3.zero;
+                targetPosition = transform.position;
+                targetRotation = transform.rotation;
+                break;
+                
+            case "lower":
+                targetPosition = new Vector3(
+                    DR.transform.position.x, 
+                    DR.transform.position.y - 0.5f, 
+                    DR.transform.position.z
+                );
+                break;
 
             default:
                 Debug.Log("Unknown command received: " + command);
@@ -107,5 +122,9 @@ public class DroneController : MonoBehaviour
             SendEnvironment();
             yield return new WaitForSeconds(0.3f);
         }
+    }
+
+    void OnCollisionEnter(Collision collision){
+        DR.isKinematic = true;
     }
 }
