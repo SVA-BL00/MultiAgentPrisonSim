@@ -359,6 +359,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 641903896352426545}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6d0fbc19ebc95c343bb251a978e40448,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3348382955243115075}
   m_SourcePrefab: {fileID: 100100000, guid: 6d0fbc19ebc95c343bb251a978e40448, type: 3}
 --- !u!4 &4020009030903431495 stripped
 Transform:
@@ -386,5 +390,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prisonerPF: {fileID: 6111048821413028342, guid: c53167561337d2149a0dfd702ccc951f,
     type: 3}
-  minSpawnPos: 5
-  maxSpawnPos: 10
+  minSpawnPosX: 5
+  maxSpawnPosX: 10
+  minSpawnPosZ: 5
+  maxSpawnPosZ: 10
+--- !u!114 &3348382955243115075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4360082877261339645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dab998057d8c3ae42b966a5a63b40517, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  entityCamera: {fileID: 0}
+  feedCamera: {fileID: 0}
+  serverIP: 127.0.0.1
+  serverPort: 5000
