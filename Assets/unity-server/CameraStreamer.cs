@@ -21,7 +21,7 @@ public class CameraStreamer : MonoBehaviour
     private TcpClient client;
     private NetworkStream stream;
     private UdpClient udpClient;
-    private float frameInterval = 0.5f;
+    private float frameInterval = 0.3f;
     private float timeSinceLastFrame = 0;
     private bool isConnected = false;
 
@@ -31,16 +31,16 @@ public class CameraStreamer : MonoBehaviour
             Debug.LogError("CameraStreamer: The 'feedCamera' must be disabled");
         }
 
-        int cameraWidth = entityCamera.pixelWidth;
-        int cameraHeight = entityCamera.pixelHeight;
+        // int cameraWidth = entityCamera.pixelWidth;
+        // int cameraHeight = entityCamera.pixelHeight;
 
-        renderTexture = new RenderTexture(cameraWidth, cameraHeight, 24);
-        texture2D = new Texture2D(cameraWidth, cameraHeight, TextureFormat.RGB24, false);
-        feedCamera.targetTexture = renderTexture;
-
-        // renderTexture = new RenderTexture(320, 320, 24);
-        // texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
+        // renderTexture = new RenderTexture(cameraWidth, cameraHeight, 24);
+        // texture2D = new Texture2D(cameraWidth, cameraHeight, TextureFormat.RGB24, false);
         // feedCamera.targetTexture = renderTexture;
+
+        renderTexture = new RenderTexture(320, 320, 24);
+        texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
+        feedCamera.targetTexture = renderTexture;
 
         InitializeConnection();
         InitializeUdpListener();

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 model = YOLO('best.pt', verbose=False)
 
-executor = ThreadPoolExecutor(max_workers=3)
+executor = ThreadPoolExecutor(max_workers=5)
 
 def handle_socket_client(client_socket, addr, port):
     logger.info(f"Connected to client: {addr} on port {port}")
@@ -34,7 +34,7 @@ def handle_socket_client(client_socket, addr, port):
             nparr = np.frombuffer(buffer, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            #img_resized = cv2.resize(img, (640, 640))
+            img_resized = cv2.resize(img, (640, 640))
             executor.submit(process_image_with_yolo, img, port)
 
         except Exception as e:
@@ -45,7 +45,7 @@ def handle_socket_client(client_socket, addr, port):
     logger.info("Client disconnected")
 
 def process_image_with_yolo(img, port):
-    results = model.track(img, persist=True, verbose=False)
+    results = model.track(img, persist=True, verbose=False, conf=0.3)
     detections = results[0].boxes
     bunnies = [r for r in detections if model.names[int(r.cls)] == 'bunny_']
     
