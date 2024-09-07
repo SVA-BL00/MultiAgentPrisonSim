@@ -1,107 +1,128 @@
 using UnityEngine;
-using System.Collections;
 using System.Net.Sockets;
-using System.Net.Http.Headers;
-using System.Linq;
+using System.Net;
+using System.Text;
+using System;
 
 public class CameraStreamer : MonoBehaviour
 {
-    [Header("Camaras")] [Tooltip("Referencia a la camara del jugador o entidad")]
+    [Header("Cameras")]
     public Camera entityCamera;
-
-    [Header("Camaras")] [Tooltip("Referencia a la camara que se va a usar para renderizar el frame (debe estar deshabilitada)")]
     public Camera feedCamera;
 
-    [Header("Configuraciones")] [Tooltip("IP del servidor de python")]
+    [Header("Server Configuration")]
     public string serverIP = "127.0.0.1";
+    [SerializeField] public int serverPort = 5001;
 
-    [Header("Configuraciones")] [Tooltip("Puerto del servidor de python")]
-    [SerializeField] public int serverPort = 5000;
-
-    // textura donde se va a renderizar la camara
+    [Header("Detection")]
+    public CameraDetector detector;
     private RenderTexture renderTexture;
-
-    // textura que se va a enviar al servidor de python
     private Texture2D texture2D;
-
-    // conexion con el servidor
     private TcpClient client;
-
-    // flujo de datos de la conexion
     private NetworkStream stream;
-
-    private float frameInterval = 0.1f; // 100 ms
+    private UdpClient udpClient;
+    private float frameInterval = 0.5f;
     private float timeSinceLastFrame = 0;
-    void Start()
+    private bool isConnected = false;
+
+    private void Start()
     {
-        // asegurarnos que la camara de python este deshabilitada
-        if (feedCamera.enabled) {
-            Debug.LogError("La camara 'feedCamera' debe estar deshabilitada");
+        if(feedCamera.enabled){
+            Debug.LogError("CameraStreamer: The 'feedCamera' must be disabled");
         }
 
-        // crear conexion con el servidor
-        client = new TcpClient(serverIP, serverPort);
-
-        // establecer conexion con el servidor
-        stream = client.GetStream();
-
-        // crear textura con dimensiones de la camara
-        renderTexture = new RenderTexture(entityCamera.pixelWidth, entityCamera.pixelHeight, 24);
-
-        // textura donde se va a renderizar la camara
+        renderTexture = new RenderTexture(320, 320, 24);
+        texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
         feedCamera.targetTexture = renderTexture;
 
-        // textura que se va a enviar al servidor de python
-        texture2D = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
+        InitializeConnection();
+        InitializeUdpListener();
 
-        
-    }
-
-    void Update()
-    {
-        // copiar posicion y rotacion de la camara del jugador a la camara de la feed
-        feedCamera.transform.position = entityCamera.transform.position;
-        feedCamera.transform.rotation = entityCamera.transform.rotation;
-
-        // si la conexion con el servidor esta establecida, capturar y enviar frame
-        if (client.Connected)
-        {
-            timeSinceLastFrame += Time.deltaTime;
-            if (timeSinceLastFrame >= frameInterval)
-            {
-                timeSinceLastFrame = 0;
-                StartCoroutine(CaptureAndSendFrame());
+        if(detector == null){
+            detector = GetComponent<CameraDetector>();
+            if (detector == null){
+                Debug.LogError("CameraStreamer: CameraDetector component not found!");
             }
         }
     }
 
-    IEnumerator CaptureAndSendFrame()
+    private void InitializeConnection()
     {
-        yield return new WaitForEndOfFrame();
-
-        // redenderizar la camara en la textura
-        feedCamera.Render();
-
-        // leer pixeles de la textura
-        texture2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-        texture2D.Apply();
-
-        // convertir textura a bytes en formato jpg
-        byte[] bytes = texture2D.EncodeToJPG();
-
-        // enviar cantidad de bytes en la imagen
-        var length = System.Text.Encoding.UTF8.GetBytes(bytes.Length.ToString());
-        stream.Write(length, 0, length.Length);
-
-        // enviar bytes de la imagen
-        stream.Write(bytes, 0, bytes.Length);
+        try{
+            client = new TcpClient(serverIP, serverPort);
+            stream = client.GetStream();
+            isConnected = true;
+            Debug.Log($"CameraStreamer: Connected to server on port {serverPort}");
+        }catch (SocketException e){
+            Debug.LogError($"CameraStreamer: Failed to connect to server: {e.Message}");
+            isConnected = false;
+        }
     }
 
-    void OnApplicationQuit()
-    {
-        if (client != null && client.Connected)
-        {
+    private void InitializeUdpListener(){
+        udpClient = new UdpClient(serverPort);
+        udpClient.BeginReceive(new AsyncCallback(ReceiveCallback), null);
+    }
+
+    private void ReceiveCallback(IAsyncResult ar){
+        IPEndPoint ip = new IPEndPoint(IPAddress.Any, serverPort);
+        byte[] bytes = udpClient.EndReceive(ar, ref ip);
+        string message = Encoding.ASCII.GetString(bytes);
+
+        if(message == "BUNNY"){
+            if(detector != null){
+                detector.isDetected = true;
+            }else{
+                Debug.LogError("CameraStreamer: CameraDetector is null, can't update detection status");
+            }
+        }
+
+        udpClient.BeginReceive(new AsyncCallback(ReceiveCallback), null);
+    }
+
+    private void Update(){
+        if(!isConnected){
+            AttemptReconnection();
+            return;
+        }
+
+        feedCamera.transform.position = entityCamera.transform.position;
+        feedCamera.transform.rotation = entityCamera.transform.rotation;
+
+        timeSinceLastFrame += Time.deltaTime;
+        if(timeSinceLastFrame >= frameInterval){
+            timeSinceLastFrame = 0;
+            CaptureAndSendFrame();
+        }
+    }
+
+    private void AttemptReconnection(){
+        Debug.Log("CameraStreamer: Attempting to reconnect...");
+        InitializeConnection();
+    }
+
+    private void CaptureAndSendFrame(){
+        feedCamera.Render();
+        RenderTexture.active = renderTexture;
+        
+        Rect rect = new Rect(0, 0, renderTexture.width, renderTexture.height);
+        texture2D.ReadPixels(rect, 0, 0);
+        texture2D.Apply();
+
+        byte[] bytes = texture2D.EncodeToJPG();
+
+        var length = Encoding.UTF8.GetBytes(bytes.Length.ToString("D7"));
+        stream.Write(length, 0, length.Length);
+        stream.Write(bytes, 0, bytes.Length);
+
+        RenderTexture.active = null;
+    }
+
+    private void OnApplicationQuit(){
+        if (client != null && client.Connected){
             client.Close();
+        }if (udpClient != null){
+            udpClient.Close();
         }
     }
 }
