@@ -2,8 +2,6 @@ using UnityEngine;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
-using System.Threading;
 using System;
 
 public class CameraStreamer : MonoBehaviour
@@ -14,34 +12,17 @@ public class CameraStreamer : MonoBehaviour
 
     [Header("Server Configuration")]
     public string serverIP = "127.0.0.1";
-    [SerializeField] public int serverPort = 5000;
+    [SerializeField] public int serverPort = 5001; // Changed to match the server's port range
 
     private RenderTexture renderTexture;
     private Texture2D texture2D;
     private TcpClient client;
     private NetworkStream stream;
-    private float frameInterval = 0.5f; // Increased interval to reduce load
+    private float frameInterval = 0.5f;
     private float timeSinceLastFrame = 0;
     private bool isConnected = false;
 
-    [SerializeField] public GameObject Camera;
-    CameraDetector cameraDetector;
-
-    private void Awake()
-    {
-        Debug.Log("CameraStreamer: Awake method called");
-        try
-        {
-            cameraDetector = Camera.GetComponent<CameraDetector>();
-            Debug.Log("CameraStreamer: CameraDetector component found");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"CameraStreamer: Error in Awake: {e.Message}");
-        }
-    }
-
-    private async void Start()
+    private void Start()
     {
         Debug.Log("CameraStreamer: Start method called");
         if (feedCamera.enabled)
@@ -49,8 +30,11 @@ public class CameraStreamer : MonoBehaviour
             Debug.LogError("CameraStreamer: The 'feedCamera' must be disabled");
         }
 
+        renderTexture = new RenderTexture(320, 320, 24); // Resized to match server's expected size
+        texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
+        feedCamera.targetTexture = renderTexture;
+
         InitializeConnection();
-        InitializeTextures();
         Debug.Log("CameraStreamer: Start method completed");
     }
 
@@ -76,22 +60,6 @@ public class CameraStreamer : MonoBehaviour
         }
     }
 
-    private void InitializeTextures()
-    {
-        Debug.Log("CameraStreamer: Initializing textures");
-        try
-        {
-            renderTexture = new RenderTexture(entityCamera.pixelWidth / 2, entityCamera.pixelHeight / 2, 24);
-            feedCamera.targetTexture = renderTexture;
-            texture2D = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
-            Debug.Log("CameraStreamer: Textures initialized successfully");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"CameraStreamer: Error initializing textures: {e.Message}");
-        }
-    }
-
     private void Update()
     {
         if (!isConnected)
@@ -107,9 +75,8 @@ public class CameraStreamer : MonoBehaviour
         timeSinceLastFrame += Time.deltaTime;
         if (timeSinceLastFrame >= frameInterval)
         {
-            Debug.Log("CameraStreamer: Frame interval reached, capturing and sending frame");
             timeSinceLastFrame = 0;
-            _ = CaptureAndSendFrameAsync();  // Fire and forget
+            _ = CaptureAndSendFrameAsync();
         }
     }
 
@@ -121,55 +88,22 @@ public class CameraStreamer : MonoBehaviour
 
     private async Task CaptureAndSendFrameAsync()
     {
-        Debug.Log("CameraStreamer: Starting CaptureAndSendFrameAsync");
-        try
-        {
-            byte[] buffer = new byte[1];
-            int bytesRead = 0;
+        await Task.Yield();
 
-            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2))) // 2-second timeout
-            {
-                Debug.Log("CameraStreamer: Waiting for server response...");
-                try
-                {
-                    bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
-                    Debug.Log($"CameraStreamer: Read operation completed. Bytes read: {bytesRead}");
-                }
-                catch (OperationCanceledException)
-                {
-                    Debug.LogWarning("CameraStreamer: Read operation timed out after 2 seconds");
-                    return;
-                }
-            }
+        feedCamera.Render();
+        RenderTexture.active = renderTexture;
+        
+        Rect rect = new Rect(0, 0, renderTexture.width, renderTexture.height);
+        texture2D.ReadPixels(rect, 0, 0);
+        texture2D.Apply();
 
-            if (bytesRead > 0)
-            {
-                Debug.Log($"CameraStreamer: Received byte value: {buffer[0]}");
-                bool bunnyDetected = buffer[0] == 1;
-                if (cameraDetector != null)
-                {
-                    cameraDetector.isDetected = bunnyDetected;
-                    Debug.Log($"CameraStreamer: Bunny detected: {bunnyDetected}");
-                }
-                else
-                {
-                    Debug.LogError("CameraStreamer: cameraDetector is null");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("CameraStreamer: No data was read from the stream.");
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"CameraStreamer: Error in ReceiveDetectionStatusAsync: {e.Message}");
-            isConnected = false;
-        }
-        finally
-        {
-            Debug.Log("CameraStreamer: ReceiveDetectionStatusAsync completed");
-        }
+        byte[] bytes = texture2D.EncodeToJPG();
+
+        var length = Encoding.UTF8.GetBytes(bytes.Length.ToString("D7"));
+        await stream.WriteAsync(length, 0, length.Length);
+        await stream.WriteAsync(bytes, 0, bytes.Length);
+
+        RenderTexture.active = null;
     }
 
     private void OnApplicationQuit()

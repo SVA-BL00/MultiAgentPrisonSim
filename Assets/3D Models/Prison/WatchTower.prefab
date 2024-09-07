@@ -136,11 +136,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3020514002212373530}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  port: 5001
   isDetected: 0
 --- !u!1 &6130571501223833800
 GameObject:
@@ -363,10 +364,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3348382955243115075}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6d0fbc19ebc95c343bb251a978e40448,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 912908207785770550}
   m_SourcePrefab: {fileID: 100100000, guid: 6d0fbc19ebc95c343bb251a978e40448, type: 3}
 --- !u!4 &4020009030903431495 stripped
 Transform:
@@ -414,18 +411,3 @@ MonoBehaviour:
   feedCamera: {fileID: 0}
   serverIP: 127.0.0.1
   serverPort: 5000
-  Camera: {fileID: 0}
---- !u!114 &912908207785770550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4360082877261339645}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 97782c845248d614db5843337782f462, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 5000
-  bunnyDetected: 0
