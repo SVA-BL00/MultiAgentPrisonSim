@@ -2841,8 +2841,8 @@ MonoBehaviour:
   - {fileID: 285970505}
   - {fileID: 468866362}
   - {fileID: 99225044}
-  minInterval: 1
-  maxInterval: 4
+  minInterval: 4
+  maxInterval: 10
   spawnedPrisoner: 0
   detectedPrisoner: 0
   alert: {fileID: 123256573}

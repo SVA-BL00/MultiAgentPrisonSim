@@ -13,6 +13,7 @@ public class GameState : MonoBehaviour
     public bool spawnedPrisoner = false;
     public bool detectedPrisoner = false;
     [SerializeField] GameObject alert;
+    private Coroutine detectionCoroutine;
 
     void Start(){
         StartGame();
@@ -47,7 +48,15 @@ public class GameState : MonoBehaviour
     void Update(){
         if(detectedPrisoner){
             alert.SetActive(true);
+            if(detectionCoroutine == null){
+                detectionCoroutine = StartCoroutine(DetectAndEndGame());
+            }
         }
+    }
+
+    IEnumerator DetectAndEndGame(){
+        yield return new WaitForSeconds(3f);
+        EndGame();
     }
 
 }
