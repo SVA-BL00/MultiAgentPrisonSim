@@ -137,15 +137,12 @@ class DroneAgent(ap.Agent):
         """
         Choose a new intention based on beliefs, desires, and intentions
         """
-        print("FILTER")
         if self.first_step:
             self.intention = self.desires['path1'][1]
             self.beliefs['current_path'] = 'path1'
 
         for rule in self.rules:
             act = rule()
-            print("ACT-")
-            print(act)
             if act is not None:
                 print("NOTNULL-")
                 act()
@@ -156,7 +153,6 @@ class DroneAgent(ap.Agent):
         Define a plan given an intention and a set of actions
         """
         self.plan = self.find_path()
-        print("FUNCTION Planning")
 
     def next(self):
         """
@@ -167,13 +163,11 @@ class DroneAgent(ap.Agent):
         self.filter()
 
         if self.first_step:
-            print("FIRST-planning")
             self.planning()
             self.first_step = False
         elif self.beliefs['seeing_prisioner'].has_existence:
             self.alert()
         elif not self.plan:
-            print("NEXT-planning")
             self.planning()
         elif self.plan:
             self.actionU = self.plan[0]
@@ -886,7 +880,6 @@ class DroneAgent(ap.Agent):
         return path
 
     def next_position(self):
-        print("NEXT-Position")
         print(self.index)
         self.index += 1
         self.intention = self.desires[self.beliefs['current_path']][self.index]
@@ -1220,12 +1213,18 @@ class DronAgent(ap.Agent):
         elif performative == "reply":
             if self.moves == 0:
                 self.moves = 1
+                self.actionL = "self.move_down()"
+                self.move_down()
                 return "Drone has moved downwards."
             elif self.moves == 1:
                 self.moves = 2
+                self.actionL = "self.move_forward()"
+                self.move_forward()
                 return "Drone has moved forward."
-        elif performative == "capture":
-            return "Drone has captured the target successfully."
+            elif performative == "capture":
+                self.actionL = "self.capture()"
+                self.capture()
+                return "Drone has captured the target successfully."
         return None
 
 
@@ -1273,6 +1272,15 @@ class DronAgent(ap.Agent):
     def returnToPath(self):
         self.executing_plan = False
         self.position = 0
+        
+    def move_down(self):
+        return "move-down"
+
+    def move_forward(self):
+        return "move-forward"
+
+    def capture(self):
+        return "capture"
 
 
 """ SeguridadAgent """
@@ -1392,12 +1400,13 @@ class SegurityAgent(ap.Agent):
 
 class PrisonModel(ap.Model):
     def setup(self):
+        self.cam_alert = 0
+        self.cameras = ap.AgentList(self, self.p.cameras, CameraAgent)
         self.drones = ap.AgentList(self, self.p.drones, DroneAgent)
         self.grid = ap.Grid(self, (self.p.M, self.p.N), track_empty=True)
         self.grid.add_agents(self.drones, positions=(self.p.dpos), random=False, empty=True)
         
         #Interactions
-        self.cameras = ap.AgentList(self, self.p.cameras, CameraAgent)
         for camera, position in zip(self.cameras, self.p.positions):
             camera.position = position
         self.guard = ap.AgentList(self, self.p.guard, SegurityAgent)
@@ -1405,6 +1414,7 @@ class PrisonModel(ap.Model):
         self.broadcast = deque()
 
     def step(self):
+        self.cam_alert = 1
         self.drones.step(self.grid)
         self.cameras.step()
         self.process_messages("Drone")
@@ -1482,17 +1492,17 @@ def handle_drone(message):
             model.step()
             client_state['step_count'] += 1
         
-        if model.drones[0].actionU:
-            print(f"ACTUIONU")    
+        if model.dron[0].actionL: 
+            action = model.dron[0].actionL
+        elif model.drones[0].actionU: 
             action = model.drones[0].actionU
         else:
-            action = "idle"
-        
+            action = "self.idle()"
         print(f"Command: {action}")
+        print(f"MOVES: {model.dron[0].moves}")
         
         clean_action = clean(action)    
         emit('drone_response', {'command': clean_action})
-        
 
     except json.JSONDecodeError:
         print('Received invalid JSON:', message)
