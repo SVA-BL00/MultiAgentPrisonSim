@@ -1,19 +1,17 @@
+from flask import Flask, request
+from flask_socketio import SocketIO, emit
+import json
 import agentpy as ap
 import ast
 import networkx as nx
+from matplotlib import pyplot as plt
 from owlready2 import *
 from collections import deque
 import IPython
 import random
 
-
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
-
-# Initialize ontology
-onto = get_ontology("file://onto.owl")
-onto.load()
-onto.destroy()
 
 def create_resource_if_not_exists(resource_class, resource_name):
     existing_resources = list(onto.search_one(iri=f"*{resource_name}"))
@@ -21,29 +19,12 @@ def create_resource_if_not_exists(resource_class, resource_name):
         return existing_resources[0]
     return resource_class(resource_name)
 
-
-''' Message Class'''
-class Message:
-    performatives = ["take-control", "reply", "alert", "move-forward", "move-down", "capture"]
-
-    def __init__(self, performative="", content="pass", sender=None, receiver=None):
-        self.performative = performative if performative in self.performatives else ""
-        self.content = content
-        self.sender = sender
-        self.receiver = receiver
-
-def print_message(msg):
-    print("----")
-    print(f"Performative: {msg.performative}")
-    print(f"Content: {msg.content}")
-    print(f"Sender: Agent {msg.sender}")
-    print(f"Receiver: Agent {msg.receiver}")
-    print("----")
-
-
+# Initialize ontology
+onto = get_ontology("file://onto.owl")
+onto.load()
+onto.destroy()
 #ONTOLOGIA
 #onto.delete()
-
 with onto:
 
     class Entity(Thing):
@@ -88,6 +69,27 @@ with onto:
         pass
 
 
+''' Message Class'''
+class Message:
+    performatives = ["take-control", "reply", "alert", "move-forward", "move-down", "capture"]
+
+    def __init__(self, performative="", content="pass", sender=None, receiver=None):
+        self.performative = performative if performative in self.performatives else ""
+        self.content = content
+        self.sender = sender
+        self.receiver = receiver
+
+    def print_message(msg):
+        print("----")
+        print(f"Performative: {msg.performative}")
+        print(f"Content: {msg.content}")
+        print(f"Sender: Agent {msg.sender}")
+        print(f"Receiver: Agent {msg.receiver}")
+        print("----")
+
+
+""" Dron """
+## Drone Agent Logic
 class DroneAgent(ap.Agent):
     def see(self, e):
         """
@@ -234,7 +236,6 @@ class DroneAgent(ap.Agent):
         }
         self.intention = None
         self.plan = None
-        print("SETUP-------------")
         self.first_step = True
 
     def step(self, env):
@@ -901,6 +902,13 @@ class DroneAgent(ap.Agent):
     def turn_around(self):
       pass
       
+    def alert(self):
+      self.plan = None
+      self.intention = None
+      self.idle()
+      print("Communication with security agent")
+      self.beliefs['seeing_prisioner'] = Prisioner(has_existence = False)
+      
     def choose_camera(self):
       camera_names = ['camera1', 'camera2', 'camera3', 'camera4']
       cameras_with_alerts = []
@@ -916,7 +924,6 @@ class DroneAgent(ap.Agent):
 
       #En caso de que haya sólo un elemento se regresa ese valor
       chosen_camera = eval(self.beliefs['cameras'][cameras_with_alerts[0]].has_place.has_position)
-
 
       #En caso de que haya más de una cámara que detectó movimiento, elegir la más cercana a mi posición
       shortest_distance = float('inf')
@@ -934,13 +941,6 @@ class DroneAgent(ap.Agent):
             chosen_camera = self.beliefs['cameras'][i].has_place.has_position
 
       return chosen_camera
-
-    def alert(self):
-        self.plan = None
-        self.intention = None
-        self.idle()
-        print("Communication with security agent")
-        self.beliefs['seeing_prisioner'] = Prisioner(has_existence = False)
 
     def move(self):
         if self.directionTag == 'N':
@@ -989,6 +989,7 @@ class DroneAgent(ap.Agent):
     def idle(self):
         pass
 
+
 """ CamaraAgent """
 ## Camera Agent Logic
 class CameraAgent(ap.Agent):
@@ -1019,7 +1020,6 @@ class CameraAgent(ap.Agent):
             return self.send_message
         return None
 
-
     def send_message(self):
         msg = Message("alert", "Prisioner detected.", "camera " + str(self.id), "Drone")
         self.model.broadcast.append(msg)
@@ -1042,10 +1042,8 @@ class CameraAgent(ap.Agent):
         return None
 
 
-
-
 """ Dron """
-## Drone Agent Logic
+## Drone Agent Logic (communication protocol)
 class DronAgent(ap.Agent):
     def see(self, e):
         self.per = e
@@ -1176,7 +1174,6 @@ class DronAgent(ap.Agent):
         self.action(self.act)
         #self.step()
 
-
     def receive(self, msg):
         self.inbox.append(msg)
         #print(f"Drone received message: {msg.performative} from {msg.sender}")
@@ -1206,7 +1203,7 @@ class DronAgent(ap.Agent):
 
           msg = Message(performative, content, "Drone", "Security Guard")
           self.model.broadcast.append(msg)
-          print_message(msg)
+          #print_message(msg)
 
     def get_content(self, performative, sender):
         if performative == "reply" and self.performative == "take-control":
@@ -1278,7 +1275,6 @@ class DronAgent(ap.Agent):
         self.position = 0
 
 
-
 """ SeguridadAgent """
 ## Security Personal Agent Logic
 class SegurityAgent(ap.Agent):
@@ -1325,7 +1321,6 @@ class SegurityAgent(ap.Agent):
             return self.send_message(self.performative)
         return None
 
-
     def receive(self, msg):
         self.inbox.append(msg)
         print("Guard received message")
@@ -1354,7 +1349,7 @@ class SegurityAgent(ap.Agent):
 
         msg = Message(performative, content, "Security Guard", "Drone")
         self.model.broadcast.append(msg)
-        print_message(msg)
+        #print_message(msg)
 
     def get_content(self, performative):
         content_map = {
@@ -1389,13 +1384,10 @@ class SegurityAgent(ap.Agent):
 
         return None
 
-
     # ACCIONES
     def take_control(self):
         self.send_message("take-control")
         pass
-
-
 
 
 class PrisonModel(ap.Model):
@@ -1438,7 +1430,6 @@ class PrisonModel(ap.Model):
         pass
 
 
-
 # Global dictionary to store the model and index for each client
 client_states = {}
 
@@ -1465,9 +1456,12 @@ def handle_drone(message):
         if client_id not in client_states:
             parameters = {
                 'drones': 1,
+                'cameras': 1,
+                'guard': 1,
                 'steps': 2000,
                 'M': 200,
                 'N': 200,
+                'positions': [(0, 119), (122, 119), (122, 0), (0, 0)],
                 'dpos': [(50, 0)]
             }
             
