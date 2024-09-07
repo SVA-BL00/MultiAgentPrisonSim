@@ -6,6 +6,7 @@ using UnityEngine;
 public class DroneController : MonoBehaviour
 {
     Rigidbody DR;
+    public CameraDetector detector;
     public List<GameObject> cameras;
     public float fixedDistance = 0.0001f;
     public float actionDuration = 0.1f;
@@ -15,7 +16,7 @@ public class DroneController : MonoBehaviour
     private Vector3 targetPosition;
     public string whatTouched;
     private string currentAction = null;
-    public bool isPrisonerInView;
+    public string isPrisonerInView = "0";
 
     void Awake()
     {
@@ -29,6 +30,9 @@ public class DroneController : MonoBehaviour
 
     void Update()
     {
+        if(detector.isDetected){
+            isPrisonerInView = "Prisoner";
+        }
         if (currentAction != null)
         {
             if (currentAction == "move")
@@ -104,9 +108,8 @@ public class DroneController : MonoBehaviour
 
     void SendEnvironment()
     {
-        // TODO: BOOL VISION COMPUTACIONAL
         Vector3 position = DR.transform.position;
-        string environmentData = $"{{\"position\": \"{DR.transform.position}\", " +
+        string environmentData = $"{{\"position\": \"{position}\", " +
                                  $"\"cv\": \"{isPrisonerInView}\", " +
                                  $"\"Camera1\": \"{cameras[0].GetComponent<CameraDetector>().isDetected}\", " +
                                  $"\"Camera2\": \"{cameras[1].GetComponent<CameraDetector>().isDetected}\", " +
