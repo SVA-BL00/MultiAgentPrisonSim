@@ -34,7 +34,7 @@ def handle_socket_client(client_socket, addr, port):
             nparr = np.frombuffer(buffer, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            #Simg_resized = cv2.resize(img, (640, 640))
+            #img_resized = cv2.resize(img, (640, 640))
             executor.submit(process_image_with_yolo, img, port)
 
         except Exception as e:
@@ -45,10 +45,9 @@ def handle_socket_client(client_socket, addr, port):
     logger.info("Client disconnected")
 
 def process_image_with_yolo(img, port):
-    results = model.track(img, persist=True, verbose=False, conf=0.1, iou=0.4, max_det=10)
-
+    results = model.track(img, persist=True, verbose=False)
     detections = results[0].boxes
-    bunnies = [r for r in detections if model.names[int(r.cls)] == 'bunny']
+    bunnies = [r for r in detections if model.names[int(r.cls)] == 'bunny_']
     
     if bunnies:
         logger.info(f"Port {port}: Bunny detected")
