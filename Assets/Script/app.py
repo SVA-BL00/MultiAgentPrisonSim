@@ -1456,6 +1456,7 @@ def handle_drone(message):
         if client_id not in client_states:
             parameters = {
                 'drones': 1,
+                'dron': 1,
                 'cameras': 1,
                 'guard': 1,
                 'steps': 2000,
