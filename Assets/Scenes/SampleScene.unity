@@ -413,6 +413,18 @@ Camera:
     type: 3}
   m_PrefabInstance: {fileID: 1871176289}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &226241903 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6515287302911460372, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1871176289}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226241899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &244949264
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -999,7 +1011,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 12345
   isDetected: 0
 --- !u!114 &398887708
 MonoBehaviour:
@@ -1407,7 +1418,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 12345
   isDetected: 0
 --- !u!114 &569636923
 MonoBehaviour:
@@ -1550,7 +1560,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 12345
   isDetected: 0
 --- !u!114 &577286350
 MonoBehaviour:
@@ -2051,7 +2060,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &921579569
 Transform:
   m_ObjectHideFlags: 0
@@ -2155,6 +2164,7 @@ MonoBehaviour:
   feedCamera: {fileID: 1803095371}
   serverIP: 127.0.0.1
   serverPort: 5005
+  detector: {fileID: 0}
 --- !u!1 &1052364182
 GameObject:
   m_ObjectHideFlags: 0
@@ -2369,6 +2379,18 @@ Camera:
     type: 3}
   m_PrefabInstance: {fileID: 2083893565}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1086249402 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6515287302911460372, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+    type: 3}
+  m_PrefabInstance: {fileID: 2083893565}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1086249398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1104545650
 GameObject:
   m_ObjectHideFlags: 0
@@ -2518,6 +2540,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Camera3
       objectReference: {fileID: 0}
+    - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
+      propertyPath: detector
+      value: 
+      objectReference: {fileID: 1453554590}
     - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
         type: 3}
       propertyPath: feedCamera
@@ -2772,6 +2799,18 @@ Camera:
     type: 3}
   m_PrefabInstance: {fileID: 1105677090}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1453554590 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6515287302911460372, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1105677090}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1453554586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1522094862
 GameObject:
   m_ObjectHideFlags: 0
@@ -3096,6 +3135,18 @@ Camera:
     type: 3}
   m_PrefabInstance: {fileID: 590016001423877254}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1749751480 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6515287302911460372, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+    type: 3}
+  m_PrefabInstance: {fileID: 590016001423877254}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1749751476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1803095368
 GameObject:
   m_ObjectHideFlags: 0
@@ -3270,7 +3321,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 5001
   isDetected: 0
 --- !u!114 &1839569685
 MonoBehaviour:
@@ -3475,6 +3525,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0.366
       objectReference: {fileID: 0}
+    - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
+      propertyPath: detector
+      value: 
+      objectReference: {fileID: 226241903}
     - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
         type: 3}
       propertyPath: feedCamera
@@ -4272,6 +4327,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
         type: 3}
+      propertyPath: detector
+      value: 
+      objectReference: {fileID: 1086249402}
+    - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
       propertyPath: feedCamera
       value: 
       objectReference: {fileID: 569636924}
@@ -4654,6 +4714,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
         type: 3}
+      propertyPath: detector
+      value: 
+      objectReference: {fileID: 1749751480}
+    - target: {fileID: 3348382955243115075, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
+        type: 3}
       propertyPath: feedCamera
       value: 
       objectReference: {fileID: 1839569686}
@@ -4751,11 +4816,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -43.137
-      objectReference: {fileID: 0}
-    - target: {fileID: 6515287302911460372, guid: 5d086fba4bd1a1e40bb7d71500d3119b,
-        type: 3}
-      propertyPath: port
-      value: 5001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
