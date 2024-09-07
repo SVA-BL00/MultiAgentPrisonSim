@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameState : MonoBehaviour
@@ -9,6 +11,8 @@ public class GameState : MonoBehaviour
     public float minInterval = 10f;
     public float maxInterval = 15f;
     public bool spawnedPrisoner = false;
+    public bool detectedPrisoner = false;
+    [SerializeField] GameObject alert;
 
     void Start(){
         StartGame();
@@ -40,4 +44,10 @@ public class GameState : MonoBehaviour
         toSpawn.Spawn();
         spawnedPrisoner = true;
     }
+    void Update(){
+        if(detectedPrisoner){
+            alert.SetActive(true);
+        }
+    }
+
 }
