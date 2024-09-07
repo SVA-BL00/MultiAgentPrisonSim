@@ -6,6 +6,7 @@ using UnityEngine;
 public class DroneController : MonoBehaviour
 {
     Rigidbody DR;
+    public GameState gs;
     public CameraDetector detector;
     public List<GameObject> cameras;
     public float fixedDistance = 0.0001f;
@@ -18,6 +19,7 @@ public class DroneController : MonoBehaviour
     private string currentAction = null;
     public string isPrisonerInView = "0";
     string[] cam = new string[] { "0", "0", "0", "0" };
+    private Coroutine detectionCoroutine;
 
     void Awake()
     {
@@ -135,5 +137,13 @@ public class DroneController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision){
         DR.isKinematic = true;
+        if(detectionCoroutine == null){
+                detectionCoroutine = StartCoroutine(DetectAndEndGame());
+        }
+    }
+
+    IEnumerator DetectAndEndGame(){
+        yield return new WaitForSeconds(3f);
+        gs.EndGame();
     }
 }
