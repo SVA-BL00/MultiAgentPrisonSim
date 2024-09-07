@@ -52,6 +52,11 @@ def process_image_with_yolo(img, port):
     
     if bunnies:
         logger.info(f"Port {port}: Bunny detected")
+        send_bunny_notification(port)
+
+def send_bunny_notification(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+        udp_socket.sendto(b"BUNNY", ('127.0.0.1', port))
 
 def socket_server(port):
     HOST = '127.0.0.1'

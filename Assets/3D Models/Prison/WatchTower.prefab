@@ -136,12 +136,11 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3020514002212373530}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 5001
   isDetected: 0
 --- !u!1 &6130571501223833800
 GameObject:
@@ -411,3 +410,4 @@ MonoBehaviour:
   feedCamera: {fileID: 0}
   serverIP: 127.0.0.1
   serverPort: 5000
+  detector: {fileID: 0}

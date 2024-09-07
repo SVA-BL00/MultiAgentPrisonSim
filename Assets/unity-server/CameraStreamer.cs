@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Net.Sockets;
+using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using System;
 
 public class CameraStreamer : MonoBehaviour
@@ -12,35 +12,46 @@ public class CameraStreamer : MonoBehaviour
 
     [Header("Server Configuration")]
     public string serverIP = "127.0.0.1";
-    [SerializeField] public int serverPort = 5001; // Changed to match the server's port range
+    [SerializeField] public int serverPort = 5001; // Ensure this is unique for each camera
+
+    [Header("Detection")]
+    public CameraDetector detector; // Reference to the CameraDetector script
 
     private RenderTexture renderTexture;
     private Texture2D texture2D;
     private TcpClient client;
     private NetworkStream stream;
+    private UdpClient udpClient;
     private float frameInterval = 0.5f;
     private float timeSinceLastFrame = 0;
     private bool isConnected = false;
 
     private void Start()
     {
-        Debug.Log("CameraStreamer: Start method called");
         if (feedCamera.enabled)
         {
             Debug.LogError("CameraStreamer: The 'feedCamera' must be disabled");
         }
 
-        renderTexture = new RenderTexture(320, 320, 24); // Resized to match server's expected size
+        renderTexture = new RenderTexture(320, 320, 24);
         texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
         feedCamera.targetTexture = renderTexture;
 
         InitializeConnection();
-        Debug.Log("CameraStreamer: Start method completed");
+        InitializeUdpListener();
+
+        if (detector == null)
+        {
+            detector = GetComponent<CameraDetector>();
+            if (detector == null)
+            {
+                Debug.LogError("CameraStreamer: CameraDetector component not found!");
+            }
+        }
     }
 
     private void InitializeConnection()
     {
-        Debug.Log("CameraStreamer: Initializing connection");
         try
         {
             client = new TcpClient(serverIP, serverPort);
@@ -53,18 +64,40 @@ public class CameraStreamer : MonoBehaviour
             Debug.LogError($"CameraStreamer: Failed to connect to server: {e.Message}");
             isConnected = false;
         }
-        catch (Exception e)
+    }
+
+    private void InitializeUdpListener()
+    {
+        udpClient = new UdpClient(serverPort);
+        udpClient.BeginReceive(new AsyncCallback(ReceiveCallback), null);
+    }
+
+    private void ReceiveCallback(IAsyncResult ar)
+    {
+        IPEndPoint ip = new IPEndPoint(IPAddress.Any, serverPort);
+        byte[] bytes = udpClient.EndReceive(ar, ref ip);
+        string message = Encoding.ASCII.GetString(bytes);
+
+        if (message == "BUNNY")
         {
-            Debug.LogError($"CameraStreamer: Unexpected error in InitializeConnection: {e.Message}");
-            isConnected = false;
+            // Update the CameraDetector's isDetected boolean
+            if (detector != null)
+            {
+                detector.isDetected = true;
+            }
+            else
+            {
+                Debug.LogError("CameraStreamer: CameraDetector is null, can't update detection status");
+            }
         }
+
+        udpClient.BeginReceive(new AsyncCallback(ReceiveCallback), null);
     }
 
     private void Update()
     {
         if (!isConnected)
         {
-            Debug.Log("CameraStreamer: Not connected, attempting reconnection");
             AttemptReconnection();
             return;
         }
@@ -76,7 +109,7 @@ public class CameraStreamer : MonoBehaviour
         if (timeSinceLastFrame >= frameInterval)
         {
             timeSinceLastFrame = 0;
-            _ = CaptureAndSendFrameAsync();
+            CaptureAndSendFrame();
         }
     }
 
@@ -86,10 +119,8 @@ public class CameraStreamer : MonoBehaviour
         InitializeConnection();
     }
 
-    private async Task CaptureAndSendFrameAsync()
+    private void CaptureAndSendFrame()
     {
-        await Task.Yield();
-
         feedCamera.Render();
         RenderTexture.active = renderTexture;
         
@@ -100,18 +131,21 @@ public class CameraStreamer : MonoBehaviour
         byte[] bytes = texture2D.EncodeToJPG();
 
         var length = Encoding.UTF8.GetBytes(bytes.Length.ToString("D7"));
-        await stream.WriteAsync(length, 0, length.Length);
-        await stream.WriteAsync(bytes, 0, bytes.Length);
+        stream.Write(length, 0, length.Length);
+        stream.Write(bytes, 0, bytes.Length);
 
         RenderTexture.active = null;
     }
 
     private void OnApplicationQuit()
     {
-        Debug.Log("CameraStreamer: Application quitting, closing connection");
         if (client != null && client.Connected)
         {
             client.Close();
+        }
+        if (udpClient != null)
+        {
+            udpClient.Close();
         }
     }
 }
