@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-model = YOLO('yolov8s.pt', verbose=False)
+model = YOLO('best.pt', verbose=False)
 
 executor = ThreadPoolExecutor(max_workers=3)
 
@@ -34,8 +34,8 @@ def handle_socket_client(client_socket, addr, port):
             nparr = np.frombuffer(buffer, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            img_resized = cv2.resize(img, (320, 320))
-            executor.submit(process_image_with_yolo, img_resized, port)
+            #Simg_resized = cv2.resize(img, (640, 640))
+            executor.submit(process_image_with_yolo, img, port)
 
         except Exception as e:
             logger.error(f"Error processing data from client: {e}")
@@ -45,7 +45,7 @@ def handle_socket_client(client_socket, addr, port):
     logger.info("Client disconnected")
 
 def process_image_with_yolo(img, port):
-    results = model.track(img, persist=True, verbose=False)
+    results = model.track(img, persist=True, verbose=False, conf=0.1, iou=0.4, max_det=10)
 
     detections = results[0].boxes
     bunnies = [r for r in detections if model.names[int(r.cls)] == 'bunny']

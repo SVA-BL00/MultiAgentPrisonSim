@@ -2042,13 +2042,14 @@ GameObject:
   - component: {fileID: 921579571}
   - component: {fileID: 921579570}
   - component: {fileID: 921579573}
+  - component: {fileID: 921579574}
   m_Layer: 0
   m_Name: RealDrone
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &921579569
 Transform:
   m_ObjectHideFlags: 0
@@ -2152,7 +2153,20 @@ MonoBehaviour:
   feedCamera: {fileID: 1803095371}
   serverIP: 127.0.0.1
   serverPort: 5005
-  detector: {fileID: 0}
+  detector: {fileID: 921579574}
+--- !u!114 &921579574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921579568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d783b39dcef3243a633d8f46f73bb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDetected: 0
 --- !u!1 &1052364182
 GameObject:
   m_ObjectHideFlags: 0
@@ -2817,8 +2831,8 @@ MonoBehaviour:
   - {fileID: 285970505}
   - {fileID: 468866362}
   - {fileID: 99225044}
-  minInterval: 5
-  maxInterval: 10
+  minInterval: 1
+  maxInterval: 4
   spawnedPrisoner: 0
 --- !u!4 &1522094864
 Transform:

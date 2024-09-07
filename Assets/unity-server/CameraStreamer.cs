@@ -31,9 +31,16 @@ public class CameraStreamer : MonoBehaviour
             Debug.LogError("CameraStreamer: The 'feedCamera' must be disabled");
         }
 
-        renderTexture = new RenderTexture(320, 320, 24);
-        texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
+        int cameraWidth = entityCamera.pixelWidth;
+        int cameraHeight = entityCamera.pixelHeight;
+
+        renderTexture = new RenderTexture(cameraWidth, cameraHeight, 24);
+        texture2D = new Texture2D(cameraWidth, cameraHeight, TextureFormat.RGB24, false);
         feedCamera.targetTexture = renderTexture;
+
+        // renderTexture = new RenderTexture(320, 320, 24);
+        // texture2D = new Texture2D(320, 320, TextureFormat.RGB24, false);
+        // feedCamera.targetTexture = renderTexture;
 
         InitializeConnection();
         InitializeUdpListener();
