@@ -17,6 +17,7 @@ public class DroneController : MonoBehaviour
     public string whatTouched;
     private string currentAction = null;
     public string isPrisonerInView = "0";
+    string[] cam = new string[] { "0", "0", "0", "0" };
 
     void Awake()
     {
@@ -108,13 +109,18 @@ public class DroneController : MonoBehaviour
 
     void SendEnvironment()
     {
+        for(int i = 0; i < cameras.Count; i++){
+            if(cameras[i].GetComponent<CameraDetector>().isDetected){
+                cam[i] = i.ToString();
+            }
+        }
         Vector3 position = DR.transform.position;
         string environmentData = $"{{\"position\": \"{position}\", " +
                                  $"\"cv\": \"{isPrisonerInView}\", " +
-                                 $"\"Camera1\": \"{cameras[0].GetComponent<CameraDetector>().isDetected}\", " +
-                                 $"\"Camera2\": \"{cameras[1].GetComponent<CameraDetector>().isDetected}\", " +
-                                 $"\"Camera3\": \"{cameras[2].GetComponent<CameraDetector>().isDetected}\", " +
-                                 $"\"Camera4\": \"{cameras[3].GetComponent<CameraDetector>().isDetected}\"}}";
+                                 $"\"Camera1\": \"{cam[0]}\", " +
+                                 $"\"Camera2\": \"{cam[1]}\", " +
+                                 $"\"Camera3\": \"{cam[2]}\", " +
+                                 $"\"Camera4\": \"{cam[3]}\"}}";
         FindObjectOfType<Client>().socket.Emit("drone_handler", environmentData);
     }
 
