@@ -5,14 +5,14 @@ using UnityEngine;
 public class CameraDetector : MonoBehaviour
 {
     public bool isDetected = false;
+    public GameState gs;
     void Start()
     {
-        
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    void Update(){
+        if(isDetected){
+            gs.detectedPrisoner = true;
+        }
     }
 }

@@ -6,6 +6,8 @@ using UnityEngine;
 public class DroneController : MonoBehaviour
 {
     Rigidbody DR;
+    public GameState gs;
+    public CameraDetector detector;
     public List<GameObject> cameras;
     public float fixedDistance = 0.0001f;
     public float actionDuration = 0.1f;
@@ -15,7 +17,9 @@ public class DroneController : MonoBehaviour
     private Vector3 targetPosition;
     public string whatTouched;
     private string currentAction = null;
-    public bool isPrisonerInView;
+    public string isPrisonerInView = "0";
+    string[] cam = new string[] { "0", "0", "0", "0" };
+    private Coroutine detectionCoroutine;
 
     void Awake()
     {
@@ -29,6 +33,9 @@ public class DroneController : MonoBehaviour
 
     void Update()
     {
+        if(detector.isDetected){
+            isPrisonerInView = "Prisoner";
+        }
         if (currentAction != null)
         {
             if (currentAction == "move")
@@ -80,6 +87,21 @@ public class DroneController : MonoBehaviour
                 Quaternion turnWest = Quaternion.Euler(0, 270, 0);
                 targetRotation = turnWest;
                 break;
+            
+            case "idle":
+                DR.velocity = Vector3.zero;
+                DR.angularVelocity = Vector3.zero;
+                targetPosition = transform.position;
+                targetRotation = transform.rotation;
+                break;
+                
+            case "lower":
+                targetPosition = new Vector3(
+                    DR.transform.position.x, 
+                    DR.transform.position.y - 0.5f, 
+                    DR.transform.position.z
+                );
+                break;
 
             default:
                 Debug.Log("Unknown command received: " + command);
@@ -89,14 +111,18 @@ public class DroneController : MonoBehaviour
 
     void SendEnvironment()
     {
-        // TODO: BOOL VISION COMPUTACIONAL
+        for(int i = 0; i < cameras.Count; i++){
+            if(cameras[i].GetComponent<CameraDetector>().isDetected){
+                cam[i] = i.ToString();
+            }
+        }
         Vector3 position = DR.transform.position;
-        string environmentData = $"{{\"position\": \"{DR.transform.position}\", " +
+        string environmentData = $"{{\"position\": \"{position}\", " +
                                  $"\"cv\": \"{isPrisonerInView}\", " +
-                                 $"\"Camera1\": \"{cameras[0].GetComponent<CameraDetector>().isDetected}\", " +
-                                 $"\"Camera2\": \"{cameras[1].GetComponent<CameraDetector>().isDetected}\", " +
-                                 $"\"Camera3\": \"{cameras[2].GetComponent<CameraDetector>().isDetected}\", " +
-                                 $"\"Camera4\": \"{cameras[3].GetComponent<CameraDetector>().isDetected}\"}}";
+                                 $"\"Camera1\": \"{cam[0]}\", " +
+                                 $"\"Camera2\": \"{cam[1]}\", " +
+                                 $"\"Camera3\": \"{cam[2]}\", " +
+                                 $"\"Camera4\": \"{cam[3]}\"}}";
         FindObjectOfType<Client>().socket.Emit("drone_handler", environmentData);
     }
 
@@ -107,5 +133,17 @@ public class DroneController : MonoBehaviour
             SendEnvironment();
             yield return new WaitForSeconds(0.3f);
         }
+    }
+
+    void OnCollisionEnter(Collision collision){
+        DR.isKinematic = true;
+        if(detectionCoroutine == null){
+                detectionCoroutine = StartCoroutine(DetectAndEndGame());
+        }
+    }
+
+    IEnumerator DetectAndEndGame(){
+        yield return new WaitForSeconds(3f);
+        gs.EndGame();
     }
 }
