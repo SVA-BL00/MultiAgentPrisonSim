@@ -98,15 +98,25 @@ class DroneAgent(ap.Agent):
         own_position = str(e.positions[self])
         self.per = [Drone(has_place=Place(has_position=str(own_position)))]
 
-        computer_vision = ["building", "duck"]
-        if "Prision" in computer_vision:
+        computer_vision = self.model.dron[0]
+        if computer_vision == "Prisioner":
             self.per.append(Prisioner(has_existence = True))
         else:
             self.per.append(Prisioner(has_existence = False))
         
-        cameras_alert = [self.model.dron.cam]
-        print(cameras_alert)
+        self.cam = self.model.dron.cam
+        print("DEBUG: CAM*")
+        print(self.cam)
+        cameras_alert = [None, None, None, None]
+        if self.cam[0] is not None:
+            print("DEBUG: sCAM*NOTNULL")
+            print(self.cam[0])
+            self.cam_value = int(self.cam[0])
+            print(self.cam_value)
+            cameras_alert[self.cam_value - 1] = f"camera{self.cam_value}"
         self.per.append(cameras_alert)
+        print("DEBUG: TUPLE-CAM-ALERT")
+        print(cameras_alert)
 
     def brf(self):
         """
@@ -125,6 +135,8 @@ class DroneAgent(ap.Agent):
                   else:
                       self.beliefs['cameras'][camera_name].has_alert = True
         self.beliefs['camera_alert'] = self.choose_camera()
+        print('alert:', alert)
+        print(self.beliefs['cameras'][camera_name].has_alert)
         pass
 
     def opt(self):
@@ -144,7 +156,6 @@ class DroneAgent(ap.Agent):
         for rule in self.rules:
             act = rule()
             if act is not None:
-                print("NOTNULL-")
                 act()
         
 
@@ -182,7 +193,9 @@ class DroneAgent(ap.Agent):
         self.agentType = 0
         self.directionTag = 'N'
         self.direction = (0,1)
-        self.per = []
+        self.cam = ""
+        self.sender = ""
+        self.per = ""
         self.index = 0
 
         self.map = {}
@@ -199,7 +212,7 @@ class DroneAgent(ap.Agent):
             camera.has_alert = False
             self.map[name] = camera
 
-        self.beliefs = {'own_position': None, 'seeing_prisioner': False, 'current_path': None, 'cameras': self.map}
+        self.beliefs = {'own_position': None, 'seeing_prisioner': False, 'current_path': None, 'cameras': self.map, 'camera_alert': None}
         self.actions = (self.find_path, self.next_position, self.switch_path, self.move, self.turn, self.idle)
         #Reglas del agente
         self.rules = (
@@ -236,7 +249,7 @@ class DroneAgent(ap.Agent):
         """
         Step function
         """
-        self.see(env)
+        self.see(self.model.grid) ## before it was self.see(env)?
         self.next()
     
     def update(self):
@@ -853,7 +866,7 @@ class DroneAgent(ap.Agent):
         validator[0] = True
 
       if sum(validator) == 1:
-        self.turn_around
+        self.idle
 
       return None
 
@@ -1005,16 +1018,14 @@ class CameraAgent(ap.Agent):
     # Rule 1: if I identify a prisoner, send alert to dron
     def rule_1(self, per):
         validator = False
-
         if per == "Prisioner":
             validator = True
-
         if validator == True:
             return self.send_message
         return None
 
     def send_message(self):
-        msg = Message("alert", "Prisioner detected.", "camera " + str(self.id), "Drone")
+        msg = Message("alert", "Prisioner detected.", self.id, "Drone")
         self.model.broadcast.append(msg)
         #print_message(msg)
         pass
@@ -1026,7 +1037,9 @@ class CameraAgent(ap.Agent):
         }
 
     def step(self):
-        env = ["Prisioner"]
+        env = [""] 
+        if self.model.cam_alert == self.id:
+            env = ["Prisioner"]
         self.e = random.choice(env)
         self.per = self.see(self.e)
         self.act = self.next(self.per)
@@ -1038,8 +1051,11 @@ class CameraAgent(ap.Agent):
 """ Dron """
 ## Drone Agent Logic (communication protocol)
 class DronAgent(ap.Agent):
-    def see(self, e):
-        self.per = e
+    def see(self, e, cv):
+        if cv == "Prisoner":
+            self.per = "Prisioner"
+        else:
+            self.per = ""
         return self.per
 
     def next(self, per):
@@ -1162,7 +1178,9 @@ class DronAgent(ap.Agent):
         self.executing_plan = True
         self.followTarget(camera)
         print(camera)
-        self.per = "Prisioner" ##Recibe de dron
+        print("PLANNING---")
+        print(self.cv_global)
+        self.per = self.cv_global
         self.act = self.rule_3(self.per)
         self.action(self.act)
         #self.step()
@@ -1237,6 +1255,7 @@ class DronAgent(ap.Agent):
         self.agentType = 0
         self.performative = ""
         self.cam = None
+        self.actionL = None
         self.rules = [
             self.rule_5,
             self.rule_1,
@@ -1248,14 +1267,19 @@ class DronAgent(ap.Agent):
             self.rule_8
         ]
 
-    def step(self):
-        env = ["Nothing"]
+    def step(self, cv):
+        if cv == "Prisoner":
+            cv = "Prisioner"
+        else:
+            cv = ""
+        self.cv_global = cv
+        env = [cv] # Unity Variable
         self.e = random.choice(env)
         self.process_messages()
         if not self.autonomy:
             print("Drone is under guard control")
             return
-        self.per = self.see(self.e)
+        self.per = self.see(self.e, cv)
         self.act = self.next(self.per)
         if self.act is not None:
             self.action(self.act)
@@ -1400,7 +1424,7 @@ class SegurityAgent(ap.Agent):
 
 class PrisonModel(ap.Model):
     def setup(self):
-        self.cam_alert = 0
+        self.cam_alert = None
         self.cameras = ap.AgentList(self, self.p.cameras, CameraAgent)
         self.drones = ap.AgentList(self, self.p.drones, DroneAgent)
         self.grid = ap.Grid(self, (self.p.M, self.p.N), track_empty=True)
@@ -1414,11 +1438,20 @@ class PrisonModel(ap.Model):
         self.broadcast = deque()
 
     def step(self):
-        self.cam_alert = 1
+        self.p.camInt = 0
+        for key in self.p.camList:
+            if key.startswith('Camera') and self.p.camList[key] != '0':
+                unitycamInt = int(key.replace('Camera', ''))
+                if unitycamInt == 4:
+                    unitycamInt = 1
+                else:
+                    unitycamInt = unitycamInt - 1
+                self.p.camInt = unitycamInt
+                break 
+        self.cam_alert = self.p.camInt # UNITY VARIABLE
         self.drones.step(self.grid)
         self.cameras.step()
-        self.process_messages("Drone")
-        self.dron.step()
+        self.dron.step(self.p.cv) ## Pass unity variable
         self.process_messages("Security Guard")
         self.guard.step()
         
@@ -1462,18 +1495,22 @@ def handle_disconnect():
 def handle_drone(message):
     try:
         data = json.loads(message)
+        print("-------DATA--------")
+        print(data)
         client_id = request.sid
         if client_id not in client_states:
             parameters = {
                 'drones': 1,
                 'dron': 1,
-                'cameras': 1,
+                'cameras': 4,
                 'guard': 1,
                 'steps': 2000,
                 'M': 200,
                 'N': 200,
                 'positions': [(0, 119), (122, 119), (122, 0), (0, 0)],
-                'dpos': [(50, 0)]
+                'dpos': [(50, 0)],
+                'cv': data['cv'],
+                'camList': data
             }
             
             model = PrisonModel(parameters)
@@ -1493,7 +1530,8 @@ def handle_drone(message):
             client_state['step_count'] += 1
         
         if model.dron[0].actionL: 
-            action = model.dron[0].actionL
+            if model.dron[0].actionL == "self.move_down()" or  model.dron[0].actionL == "self.move_forward()" or model.dron[0].actionL == "self.capture()": 
+                action = model.dron[0].actionL
         elif model.drones[0].actionU: 
             action = model.drones[0].actionU
         else:
