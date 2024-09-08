@@ -33,7 +33,8 @@ public class DroneController : MonoBehaviour
 
     void Update()
     {
-        if(detector.isDetected){
+        if (detector.isDetected)
+        {
             isPrisonerInView = "Prisoner";
         }
         if (currentAction != null)
@@ -87,20 +88,26 @@ public class DroneController : MonoBehaviour
                 Quaternion turnWest = Quaternion.Euler(0, 270, 0);
                 targetRotation = turnWest;
                 break;
-            
+
             case "idle":
                 DR.velocity = Vector3.zero;
                 DR.angularVelocity = Vector3.zero;
                 targetPosition = transform.position;
                 targetRotation = transform.rotation;
                 break;
-                
-            case "lower":
+
+            case "move_forward":
+                Vector3 newPositionF = DR.transform.position - transform.forward * 10f;
+                targetPosition = newPositionF;
+                break;
+
+            case "move_down":
                 targetPosition = new Vector3(
-                    DR.transform.position.x, 
-                    DR.transform.position.y - 0.5f, 
+                    DR.transform.position.x,
+                    DR.transform.position.y - 10f,
                     DR.transform.position.z
                 );
+                Debug.Log($"Move Down: Setting target position to {targetPosition}");
                 break;
 
             default:
@@ -111,8 +118,10 @@ public class DroneController : MonoBehaviour
 
     void SendEnvironment()
     {
-        for(int i = 0; i < cameras.Count; i++){
-            if(cameras[i].GetComponent<CameraDetector>().isDetected){
+        for (int i = 0; i < cameras.Count; i++)
+        {
+            if (cameras[i].GetComponent<CameraDetector>().isDetected)
+            {
                 cam[i] = i.ToString();
             }
         }
@@ -135,14 +144,17 @@ public class DroneController : MonoBehaviour
         }
     }
 
-    void OnCollisionEnter(Collision collision){
+    void OnCollisionEnter(Collision collision)
+    {
         DR.isKinematic = true;
-        if(detectionCoroutine == null){
-                detectionCoroutine = StartCoroutine(DetectAndEndGame());
+        if (detectionCoroutine == null)
+        {
+            detectionCoroutine = StartCoroutine(DetectAndEndGame());
         }
     }
 
-    IEnumerator DetectAndEndGame(){
+    IEnumerator DetectAndEndGame()
+    {
         yield return new WaitForSeconds(3f);
         gs.EndGame();
     }

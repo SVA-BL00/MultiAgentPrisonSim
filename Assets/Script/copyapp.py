@@ -1037,7 +1037,7 @@ class CameraAgent(ap.Agent):
         }
 
     def step(self):
-        env = ["Nothing"] 
+        env = [""] 
         if self.model.cam_alert == self.id:
             env = ["Prisioner"]
         self.e = random.choice(env)
@@ -1053,12 +1053,6 @@ class CameraAgent(ap.Agent):
 class DronAgent(ap.Agent):
     def see(self, e, cv):
         self.per = e
-        """        
-        if cv == "Prisoner":
-            self.per = "Prisioner"
-        else:
-            self.per = ""
-        """
         return self.per
 
     def next(self, per):
@@ -1120,6 +1114,7 @@ class DronAgent(ap.Agent):
     # Rule 4: if I have autonomy and I don't identify a prisioner and get a message and it is from a camera, I go to the camera's location
     def rule_4(self, per):
         validator = [False, False, False]
+
         if per != "Prisioner":
             validator[0] = True
         if self.performative == "alert":
@@ -1197,7 +1192,6 @@ class DronAgent(ap.Agent):
         #print(f"Drone received message: {msg.performative} from {msg.sender}")
         pass
 
-
     def process_messages(self):
         #print(f"Processing messages. Inbox size: {len(self.inbox)}")
         if self.inbox:
@@ -1215,15 +1209,16 @@ class DronAgent(ap.Agent):
             elif msg.performative in ["move-down", "move-forward", "capture"]:
                 self.send_message("reply", msg.performative)
 
-    def send_message(self, performative, sender=None):
-          content = self.get_content(performative, sender)
-          if content is None:
-              print(f"Invalid performative: {performative}")
-              return
 
-          msg = Message(performative, content, "Drone", "Security Guard")
-          self.model.broadcast.append(msg)
-          #print_message(msg)
+    def send_message(self, performative, sender=None):
+        content = self.get_content(performative, sender)
+        if content is None:
+            print(f"Invalid performative: {performative}")
+            return
+
+        msg = Message(performative, content, "Drone", "Security Guard")
+        self.model.broadcast.append(msg)
+        #print_message(msg)
 
     def get_content(self, performative, sender):
         if performative == "reply" and self.performative == "take-control":
@@ -1248,9 +1243,6 @@ class DronAgent(ap.Agent):
                 self.actionL = "self.move_forward()"
                 self.move_forward()
                 return "Drone has moved forward."
-            elif self.moves == 2:
-                self.actionL = "self.idle()"
-                self.idle()
             elif performative == "capture":
                 self.actionL = "self.capture()"
                 self.capture()
@@ -1268,7 +1260,6 @@ class DronAgent(ap.Agent):
         self.performative = ""
         self.cam = None
         self.actionL = None
-        self.cv_global = None
         self.rules = [
             self.rule_5,
             self.rule_1,
@@ -1282,18 +1273,19 @@ class DronAgent(ap.Agent):
 
     def step(self, cv):
         if cv == "Prisoner":
-            self.cv_global = "Prisioner"
+            cv = "Prisioner"
         else:
-            self.cv_globalv = ""
-        env = [self.cv_global] # Unity Variable
+            cv = ""
+        self.cv_global = cv
+        env = [cv] # Unity Variable
         self.e = random.choice(env)
         self.process_messages()
         if not self.autonomy:
             print("Drone is under guard control")
             return
-        self.per = self.see(self.e, self.cv_global)
-        print("DEBUG: DronAgent Step: self.cv_global")
-        print(self.cv_global)
+        print("DEBUG: step DronAgent CV")
+        print(cv)
+        self.per = self.see(self.e, cv)
         self.act = self.next(self.per)
         if self.act is not None:
             self.action(self.act)
@@ -1319,9 +1311,6 @@ class DronAgent(ap.Agent):
 
     def capture(self):
         return "capture"
-
-    def idle(self):
-        pass
 
 
 """ SeguridadAgent """
@@ -1441,7 +1430,7 @@ class SegurityAgent(ap.Agent):
 
 class PrisonModel(ap.Model):
     def setup(self):
-        self.cam_alert = 1
+        self.cam_alert = 0
         self.cameras = ap.AgentList(self, self.p.cameras, CameraAgent)
         self.drones = ap.AgentList(self, self.p.drones, DroneAgent)
         self.grid = ap.Grid(self, (self.p.M, self.p.N), track_empty=True)
@@ -1465,16 +1454,12 @@ class PrisonModel(ap.Model):
                     unitycamInt = unitycamInt - 1
                 self.p.camInt = unitycamInt
                 break 
-        self.cam_alert = self.p.camInt # UNITY VARIABLE
+        self.cam_alert = 2 #self.p.camInt # UNITY VARIABLE
         self.drones.step(self.grid)
         self.cameras.step()
-        
-        self.process_messages("Drone") 
         self.dron.step(self.p.cv) ## Pass unity variable
-        
         self.process_messages("Security Guard")
         self.guard.step()
-        pass
         
     def process_messages(self, receiver):
         messages = [msg for msg in self.broadcast if msg.receiver == receiver]
@@ -1518,6 +1503,7 @@ def handle_drone(message):
         data = json.loads(message)
         print("-------DATA--------")
         print(data)
+        
         client_id = request.sid
         if client_id not in client_states:
             parameters = {
@@ -1533,7 +1519,7 @@ def handle_drone(message):
                 'cv': data['cv'],
                 'camList': data
             }
-
+            
             model = PrisonModel(parameters)
             result = model.setup()
             
@@ -1557,16 +1543,16 @@ def handle_drone(message):
             client_state['step_count'] += 1
         
         if model.dron[0].actionL: 
-            if model.dron[0].actionL == "self.move_down()" or  model.dron[0].actionL == "self.move_forward()" or model.dron[0].actionL == "self.capture()" or model.dron[0].actionL == "self.idle()": 
+            if model.dron[0].actionL == "self.move_down()" or  model.dron[0].actionL == "self.move_forward()" or model.dron[0].actionL == "self.capture()": 
                 action = model.dron[0].actionL
         elif model.drones[0].actionU: 
             action = model.drones[0].actionU
         else:
             action = "self.idle()"
-        #print(f"Command: {action}")
+        print(f"Command: {action}")
         print(f"MOVES: {model.dron[0].moves}")
         
-        clean_action = clean(action)
+        clean_action = clean(action)    
         emit('drone_response', {'command': clean_action})
 
     except json.JSONDecodeError:
