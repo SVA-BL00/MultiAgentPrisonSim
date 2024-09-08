@@ -9,7 +9,7 @@ The cameras and the drone use computer vision to detect suspicious activities. T
 #### CV (important to run)
 1. Install the following libraries
 ```pip install ultralytics opencv-python numpy```
-2. From a code editor, find the projet's folder. Enter the server directory:
+2. From a code editor, find the project's folder. Enter the server directory:
 ```
 cd Assets/unity-server
 ```
